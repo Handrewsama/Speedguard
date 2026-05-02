@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0a0a0f">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="SpeedGuard">
+  <title>SpeedGuard DGT</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ok:    #00ff88;
+      --warn:  #ffe500;
+      --orange:#ff9500;
+      --red:   #ff3b30;
+      --deep:  #cc0033;
+      --penal: #bf5fff;
+      --bg:    #0a0a0f;
+      --card:  #111118;
+      --border:#1e1e2e;
+      --text:  #e0e0f0;
+      --muted: #555570;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Rajdhani', sans-serif; overflow: hidden; }
+
+    /* ── FLOATING WINDOW ─────────────────────── */
+    #floatWindow {
+      position: fixed;
+      top: 60px; left: 10px;
+      width: 300px;
+      background: rgba(10,10,15,0.96);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.04);
+      backdrop-filter: blur(20px);
+      z-index: 99999;
+      overflow: hidden;
+      transition: border-color 0.3s, box-shadow 0.3s;
+      min-width: 220px; min-height: 160px;
+      max-width: 98vw;
+      resize: both;
+      display: flex;
+      flex-direction: column;
+    }
+    #floatWindow.alert-warn  { border-color: #ffe50055; box-shadow: 0 0 30px #ffe50022; }
+    #floatWindow.alert-bad   { border-color: #ff3b3066; box-shadow: 0 0 40px #ff3b3033; }
+    #floatWindow.alert-penal { border-color: #bf5fff88; box-shadow: 0 0 50px #bf5fff44; animation: pulseGlow 1s infinite; }
+
+    @keyframes pulseGlow {
+      0%,100% { box-shadow: 0 0 40px #bf5fff44; }
+      50%      { box-shadow: 0 0 80px #bf5fff88; }
+    }
+
+    /* ── TITLE BAR (drag handle) ─────────────── */
+    #titleBar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 12px;
+      background: rgba(255,255,255,0.03);
+      border-bottom: 1px solid var(--border);
+      cursor: grab; user-select: none; touch-action: none;
+      flex-shrink: 0;
+    }
+    #titleBar:active { cursor: grabbing; }
+    .tb-left { display: flex; align-items: center; gap: 8px; }
+    .tb-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 6px var(--ok); }
+    .tb-title { font-family: 'Share Tech Mono', monospace; font-size: 12px; letter-spacing: 2px; color: var(--ok); }
+    .tb-actions { display: flex; gap: 6px; }
+    .tb-btn {
+      width: 24px; height: 24px; border-radius: 6px; border: 1px solid var(--border);
+      background: transparent; color: var(--muted); cursor: pointer; font-size: 12px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .tb-btn:active { background: rgba(255,255,255,0.08); }
+
+    /* ── CONTENT ─────────────────────────────── */
+    #mainContent { flex: 1; overflow-y: auto; overflow-x: hidden; }
+    #mainContent::-webkit-scrollbar { width: 3px; }
+    #mainContent::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    /* ── SCREENS ─────────────────────────────── */
+    .screen { display: none; padding: 12px; }
+    .screen.active { display: block; }
+
+    /* ── SPEED DISPLAY ───────────────────────── */
+    #speedScreen {}
+    .speed-hero {
+      text-align: center; padding: 16px 0 8px;
+      position: relative;
+    }
+    .speed-value {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 72px; line-height: 1; font-weight: bold;
+      transition: color 0.3s, text-shadow 0.3s;
+    }
+    .speed-unit { font-size: 13px; letter-spacing: 4px; color: var(--muted); margin-top: 2px; }
+
+    .limit-bar {
+      display: flex; align-items: center; gap: 8px; margin: 10px 0;
+    }
+    .limit-badge {
+      width: 44px; height: 44px; border-radius: 50%;
+      border: 3px solid #cc0000;
+      background: white; color: #111;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 14px; font-weight: bold;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .limit-bar-track { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+    .limit-bar-fill { height: 100%; border-radius: 3px; transition: width 0.3s, background 0.3s; }
+    .excess-badge {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 13px; min-width: 48px; text-align: right;
+    }
+
+    /* ── SANCIÓN CARD ────────────────────────── */
+    .sancion-card {
+      border-radius: 12px; padding: 10px 12px; margin: 6px 0;
+      border: 1px solid transparent;
+      transition: all 0.35s;
+    }
+    .sancion-label { font-size: 15px; font-weight: 700; letter-spacing: 1px; }
+    .sancion-desc  { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .sancion-row   { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+    .sancion-pill  {
+      padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;
+      border: 1px solid rgba(255,255,255,0.1);
+      font-family: 'Share Tech Mono', monospace;
+    }
+    .pill-multa  { background: rgba(255,149,0,0.15);  color: #ff9500; }
+    .pill-puntos { background: rgba(255,59,48,0.15);  color: #ff3b30; }
+    .pill-carcel { background: rgba(191,95,255,0.15); color: #bf5fff; }
+    .pill-ok     { background: rgba(0,255,136,0.12);  color: #00ff88; }
+    .sancion-nota { font-size: 10px; color: var(--muted); margin-top: 6px; line-height: 1.4; }
+
+    /* ── VÍA SELECTOR ────────────────────────── */
+    .via-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px;
+    }
+    .via-btn {
+      background: transparent; border: 1px solid var(--border);
+      border-radius: 10px; padding: 8px 6px; cursor: pointer;
+      color: var(--muted); text-align: center; font-family: 'Rajdhani', sans-serif;
+      font-size: 12px; font-weight: 600; transition: all 0.2s;
+      touch-action: manipulation;
+    }
+    .via-btn.active { background: rgba(0,255,136,0.08); border-color: #00ff8866; color: var(--ok); }
+    .via-btn .via-icon { font-size: 18px; display: block; margin-bottom: 2px; }
+    .via-btn .via-limit { font-family: 'Share Tech Mono', monospace; font-size: 14px; }
+
+    /* ── GPS STATUS ──────────────────────────── */
+    .gps-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 6px 12px; background: rgba(255,255,255,0.02);
+      border-top: 1px solid var(--border); font-size: 10px;
+      font-family: 'Share Tech Mono', monospace; flex-shrink: 0;
+    }
+    .gps-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+    .gps-dot.ok      { background: var(--ok);  box-shadow: 0 0 4px var(--ok); animation: blink 2s infinite; }
+    .gps-dot.waiting { background: var(--warn); box-shadow: 0 0 4px var(--warn); animation: blink 1s infinite; }
+    .gps-dot.error   { background: var(--red);  box-shadow: 0 0 4px var(--red); }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+    /* ── NAV TABS ────────────────────────────── */
+    .nav-tabs {
+      display: flex; border-top: 1px solid var(--border); flex-shrink: 0;
+    }
+    .nav-tab {
+      flex: 1; padding: 8px 4px; background: transparent; border: none;
+      color: var(--muted); font-family: 'Rajdhani', sans-serif; font-size: 11px;
+      font-weight: 600; letter-spacing: 1px; cursor: pointer; text-transform: uppercase;
+      transition: all 0.2s; touch-action: manipulation;
+    }
+    .nav-tab.active { color: var(--ok); background: rgba(0,255,136,0.05); }
+
+    /* ── EDITOR SCREEN ───────────────────────── */
+    #editorScreen {}
+    .section-title {
+      font-size: 11px; letter-spacing: 2px; color: var(--muted);
+      text-transform: uppercase; margin-bottom: 8px; display: flex;
+      align-items: center; justify-content: space-between;
+    }
+    .sancion-editor-item {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 10px; padding: 10px; margin-bottom: 8px;
+    }
+    .editor-row { display: flex; gap: 6px; margin-bottom: 6px; align-items: center; }
+    .editor-label { font-size: 10px; color: var(--muted); min-width: 60px; }
+    .editor-input {
+      flex: 1; background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+      border-radius: 6px; padding: 5px 8px; color: var(--text);
+      font-family: 'Share Tech Mono', monospace; font-size: 12px;
+      outline: none; transition: border-color 0.2s;
+    }
+    .editor-input:focus { border-color: var(--ok); }
+    .editor-check { display: flex; align-items: center; gap: 8px; font-size: 12px; cursor: pointer; }
+    .editor-check input[type=checkbox] { accent-color: var(--penal); width: 16px; height: 16px; }
+    .save-btn {
+      width: 100%; padding: 10px; background: rgba(0,255,136,0.12);
+      border: 1px solid rgba(0,255,136,0.3); border-radius: 10px;
+      color: var(--ok); font-family: 'Rajdhani', sans-serif; font-size: 14px;
+      font-weight: 700; letter-spacing: 2px; cursor: pointer; margin-top: 8px;
+      transition: all 0.2s;
+    }
+    .save-btn:active { background: rgba(0,255,136,0.25); }
+    .dgt-link {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 10px; background: rgba(0,180,255,0.08);
+      border: 1px solid rgba(0,180,255,0.25); border-radius: 10px;
+      color: #00b4ff; text-decoration: none; font-size: 13px; font-weight: 600;
+      margin-top: 8px; letter-spacing: 1px;
+    }
+    .reset-btn {
+      width: 100%; padding: 8px; background: rgba(255,59,48,0.08);
+      border: 1px solid rgba(255,59,48,0.25); border-radius: 10px;
+      color: var(--red); font-family: 'Rajdhani', sans-serif; font-size: 12px;
+      font-weight: 600; letter-spacing: 1px; cursor: pointer; margin-top: 6px;
+    }
+
+    /* ── INFO SCREEN ─────────────────────────── */
+    .info-block {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 10px; padding: 10px; margin-bottom: 8px;
+    }
+    .info-block h3 { font-size: 13px; color: var(--ok); margin-bottom: 6px; letter-spacing: 1px; }
+    .info-block p  { font-size: 11px; color: #aaa; line-height: 1.5; }
+    .info-block ul { font-size: 11px; color: #aaa; line-height: 1.8; padding-left: 14px; }
+
+    /* ── OVERLAY TOGGLE (main page button) ───── */
+    #startBtn {
+      position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+      padding: 14px 32px; background: rgba(0,255,136,0.12);
+      border: 2px solid rgba(0,255,136,0.4); border-radius: 50px;
+      color: var(--ok); font-family: 'Rajdhani', sans-serif;
+      font-size: 16px; font-weight: 700; letter-spacing: 3px; cursor: pointer;
+      z-index: 9999; transition: all 0.2s;
+    }
+
+    /* ── RESIZE HANDLE ───────────────────────── */
+    .resize-hint {
+      position: absolute; bottom: 24px; right: 4px; width: 12px; height: 12px;
+      border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted);
+      opacity: 0.3; pointer-events: none;
+    }
+
+    /* ── MINIMIZED STATE ─────────────────────── */
+    #floatWindow.minimized { height: 42px !important; overflow: hidden; resize: none; }
+    #floatWindow.minimized #mainContent,
+    #floatWindow.minimized .nav-tabs,
+    #floatWindow.minimized .gps-bar { display: none; }
+
+    /* Scrollbar */
+    * { scrollbar-width: thin; scrollbar-color: #222 transparent; }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════
+     FLOATING WINDOW
+═══════════════════════════════════════════════════════════ -->
+<div id="floatWindow">
+
+  <!-- Title Bar (drag handle) -->
+  <div id="titleBar">
+    <div class="tb-left">
+      <div class="tb-dot" id="statusDot"></div>
+      <span class="tb-title">SPEEDGUARD</span>
+    </div>
+    <div class="tb-actions">
+      <button class="tb-btn" id="minimizeBtn" title="Minimizar">_</button>
+      <button class="tb-btn" id="alwaysOnBtn" title="Siempre visible">📌</button>
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <div id="mainContent">
+
+    <!-- ── SPEED SCREEN ── -->
+    <div id="speedScreen" class="screen active">
+
+      <!-- GPS / Manual toggle -->
+      <div style="display:flex;gap:6px;margin-bottom:8px;">
+        <button class="via-btn active" id="btnGPS" onclick="setInputMode('gps')" style="flex:1;border-radius:8px;padding:6px;">
+          <span style="font-size:16px">📡</span><br>GPS
+        </button>
+        <button class="via-btn" id="btnManual" onclick="setInputMode('manual')" style="flex:1;border-radius:8px;padding:6px;">
+          <span style="font-size:16px">✋</span><br>Manual
+        </button>
+        <button class="via-btn" id="btnOSM" onclick="queryOSMLimit()" style="flex:1;border-radius:8px;padding:6px;" title="Consultar límite OSM">
+          <span style="font-size:16px">🗺</span><br>OSM
+        </button>
+      </div>
+
+      <!-- Manual speed slider (hidden by default) -->
+      <div id="manualControls" style="display:none;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+          <span style="font-size:11px;color:var(--muted);">Velocidad manual</span>
+          <span id="manualVal" style="font-family:'Share Tech Mono',monospace;font-size:14px;color:var(--ok)">60 km/h</span>
+        </div>
+        <input type="range" min="0" max="250" value="60" id="manualSlider"
+          style="width:100%;accent-color:var(--ok);"
+          oninput="setManualSpeed(this.value)">
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px;">
+          <button onclick="setManualSpeed(20)"  class="via-btn" style="flex:1;padding:4px;font-size:11px;">20</button>
+          <button onclick="setManualSpeed(30)"  class="via-btn" style="flex:1;padding:4px;font-size:11px;">30</button>
+          <button onclick="setManualSpeed(50)"  class="via-btn" style="flex:1;padding:4px;font-size:11px;">50</button>
+          <button onclick="setManualSpeed(90)"  class="via-btn" style="flex:1;padding:4px;font-size:11px;">90</button>
+          <button onclick="setManualSpeed(120)" class="via-btn" style="flex:1;padding:4px;font-size:11px;">120</button>
+          <button onclick="setManualSpeed(160)" class="via-btn" style="flex:1;padding:4px;font-size:11px;">160</button>
+        </div>
+      </div>
+
+      <!-- Speed hero -->
+      <div class="speed-hero">
+        <div class="speed-value" id="speedValue">0</div>
+        <div class="speed-unit">KM/H</div>
+      </div>
+
+      <!-- Limit bar -->
+      <div class="limit-bar">
+        <div class="limit-badge" id="limitBadge">–</div>
+        <div class="limit-bar-track">
+          <div class="limit-bar-fill" id="limitBarFill" style="width:0%;background:var(--ok)"></div>
+        </div>
+        <div class="excess-badge" id="excessBadge" style="color:var(--ok)">–</div>
+      </div>
+
+      <!-- Via selector -->
+      <div style="margin-top:4px;">
+        <div class="section-title">VÍA ACTUAL <span id="osmStatus" style="font-size:9px;color:var(--muted)"></span></div>
+        <div class="via-grid" id="viaGrid"></div>
+      </div>
+
+      <!-- Sanción card -->
+      <div id="sancionCard" class="sancion-card" style="margin-top:8px;"></div>
+
+    </div><!-- /speedScreen -->
+
+    <!-- ── EDITOR SCREEN ── -->
+    <div id="editorScreen" class="screen">
+      <div class="section-title">SANCIONES EDITABLES</div>
+
+      <div id="sancionesEditorList"></div>
+
+      <button class="save-btn" onclick="saveSanciones()">💾 GUARDAR CAMBIOS</button>
+      <button class="reset-btn" onclick="resetSanciones()">↺ Restaurar por defecto</button>
+
+      <div style="margin-top:12px;">
+        <div class="section-title">FUENTE OFICIAL</div>
+        <a class="dgt-link" href="https://www.dgt.es/nuestros-servicios/permisos-de-conducir/tus-puntos/" target="_blank" rel="noopener">
+          🔗 DGT · Tu saldo de puntos
+        </a>
+        <a class="dgt-link" href="https://www.boe.es/buscar/act.php?id=BOE-A-2015-8722" target="_blank" rel="noopener" style="margin-top:6px;color:#aaffcc;">
+          📜 RDL 6/2015 · Texto consolidado (BOE)
+        </a>
+        <a class="dgt-link" href="https://www.dgt.es/comunicacion/noticias/2021/nueva-ley-trafico/" target="_blank" rel="noopener" style="margin-top:6px;color:#aaffcc;">
+          📋 Ley 18/2021 · Reforma de tráfico
+        </a>
+        <a class="dgt-link" href="https://sede.dgt.gob.es/es/multas-y-sanciones/" target="_blank" rel="noopener" style="margin-top:6px;">
+          💳 Consultar / Pagar multa DGT
+        </a>
+      </div>
+
+      <div style="margin-top:12px;">
+        <div class="section-title">DESCUENTOS POR PRONTO PAGO</div>
+        <div class="info-block">
+          <p>Las multas de tráfico tienen un <strong style="color:var(--ok)">descuento del 50%</strong> si se pagan en los primeros <strong>20 días naturales</strong>, siempre que no impliquen pérdida de puntos.<br><br>
+          Las infracciones que conllevan pérdida de puntos <strong style="color:var(--red)">no tienen descuento</strong> por pronto pago.</p>
+        </div>
+      </div>
+    </div><!-- /editorScreen -->
+
+    <!-- ── INFO SCREEN ── -->
+    <div id="infoScreen" class="screen">
+      <div class="info-block">
+        <h3>📡 GPS + OpenStreetMap</h3>
+        <p>Esta app usa el GPS de tu dispositivo y consulta los límites de velocidad de <strong>OpenStreetMap</strong> (Overpass API) en tiempo real. La API es 100% gratuita y sin límites de uso.<br><br>
+        Pulsa <strong>🗺 OSM</strong> para forzar una consulta del límite de la vía donde estás.</p>
+      </div>
+      <div class="info-block">
+        <h3>📲 Cómo instalar como APK</h3>
+        <ul>
+          <li>Opción A — Chrome Android: menú ⋮ → <em>Añadir a pantalla de inicio</em></li>
+          <li>Opción B — APK real: sube estos archivos a <strong>GitHub Pages</strong> (gratis) y usa <strong>PWABuilder.com</strong> para generar el .apk</li>
+          <li>Opción C — App directo: usa <strong>WebIntoApp.com</strong> con la URL de tu GitHub Pages</li>
+        </ul>
+      </div>
+      <div class="info-block">
+        <h3>🪟 Ventana flotante</h3>
+        <p>La ventana es <strong>arrastrable</strong> (toca el título) y <strong>redimensionable</strong> (arrastra la esquina inferior derecha).<br><br>
+        En Android, para que se superponga a Google Maps o Waze, ve a <em>Ajustes → Aplicaciones → SpeedGuard → Permisos → Aparecer encima de otras apps</em>.</p>
+      </div>
+      <div class="info-block">
+        <h3>⚖️ Aviso legal</h3>
+        <p>Información orientativa. Basado en RDL 6/2015 y Ley 18/2021. No sustituye el criterio de un abogado. Las multas exactas pueden variar según el agente, comunidad autónoma y circunstancias.</p>
+      </div>
+    </div><!-- /infoScreen -->
+
+  </div><!-- /mainContent -->
+
+  <!-- GPS Status bar -->
+  <div class="gps-bar" id="gpsBar">
+    <span><span class="gps-dot waiting" id="gpsDot"></span><span id="gpsText">Esperando GPS…</span></span>
+    <span id="gpsCoords" style="color:var(--muted)"></span>
+  </div>
+
+  <!-- Nav tabs -->
+  <div class="nav-tabs">
+    <button class="nav-tab active" id="tab-speed"  onclick="showScreen('speed')">🚗 RADAR</button>
+    <button class="nav-tab"        id="tab-editor" onclick="showScreen('editor')">⚙ EDITAR</button>
+    <button class="nav-tab"        id="tab-info"   onclick="showScreen('info')">ℹ INFO</button>
+  </div>
+
+  <div class="resize-hint"></div>
+</div><!-- /floatWindow -->
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+//  DEFAULT SANCIONES (legislación española RDL 6/2015 + Ley 18/2021)
+// ══════════════════════════════════════════════════════════════════
+const DEFAULT_SANCIONES = [
+  { id:'ok',        label:'SIN INFRACCIÓN',   desc:'Circulando dentro del límite', color:'#00ff88', minExceso:-999, maxExceso:0,   multa:0,    descuento:false, puntos:0, carcel:false, nota:'' },
+  { id:'leve',      label:'LEVE',             desc:'Exceso hasta 20 km/h',        color:'#ffe500', minExceso:1,   maxExceso:20,  multa:100,  descuento:true,  puntos:0, carcel:false, nota:'Descuento 50% primeros 20 días naturales.' },
+  { id:'grave',     label:'GRAVE',            desc:'Exceso 21–30 km/h',           color:'#ff9500', minExceso:21,  maxExceso:30,  multa:400,  descuento:false, puntos:2, carcel:false, nota:'Pérdida de 2 puntos del carnet.' },
+  { id:'muy_grave', label:'MUY GRAVE',        desc:'Exceso 31–50 km/h',           color:'#ff3b30', minExceso:31,  maxExceso:50,  multa:500,  descuento:false, puntos:4, carcel:false, nota:'Pérdida de 4 puntos. Multa mínima 500€.' },
+  { id:'grave_ext', label:'MUY GRAVE +50',    desc:'Exceso 51–70 km/h',           color:'#cc0033', minExceso:51,  maxExceso:70,  multa:1000, descuento:false, puntos:6, carcel:false, nota:'Pérdida de 6 puntos. Puede implicar suspensión provisional.' },
+  { id:'penal',     label:'DELITO PENAL',     desc:'Exceso +70 km/h',             color:'#bf5fff', minExceso:71,  maxExceso:999, multa:1200, descuento:false, puntos:6, carcel:true,  nota:'Art. 379 CP: hasta 6 meses prisión / 31–90 días multa. Suspensión carnet 1–4 años.' },
+];
+
+const TIPOS_VIA = [
+  { id:'via30',      label:'Zona 30',     icon:'🔵', limite:30 },
+  { id:'urbana',     label:'Urbana',      icon:'🏙', limite:50 },
+  { id:'convenc',    label:'Carretera',   icon:'🛣', limite:90 },
+  { id:'autovia',    label:'Autovía',     icon:'🛤', limite:120 },
+  { id:'escolar',    label:'Escolar',     icon:'🏫', limite:20 },
+];
+
+// ══════════════════════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════════════════════
+let sanciones    = loadSanciones();
+let currentVia   = TIPOS_VIA[1];     // default urbana
+let currentSpeed = 0;
+let inputMode    = 'gps';            // 'gps' | 'manual'
+let gpsWatchId   = null;
+let lastLat      = null, lastLon = null;
+let osmQuerying  = false;
+
+// ══════════════════════════════════════════════════════════════════
+//  PERSISTENCE
+// ══════════════════════════════════════════════════════════════════
+function loadSanciones() {
+  try {
+    const saved = localStorage.getItem('sg_sanciones');
+    return saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(DEFAULT_SANCIONES));
+  } catch { return JSON.parse(JSON.stringify(DEFAULT_SANCIONES)); }
+}
+function saveSancionesStorage(data) {
+  localStorage.setItem('sg_sanciones', JSON.stringify(data));
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  NAVIGATION
+// ══════════════════════════════════════════════════════════════════
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(name + 'Screen').classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'editor') renderEditor();
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  VÍA GRID
+// ══════════════════════════════════════════════════════════════════
+function renderViaGrid() {
+  const grid = document.getElementById('viaGrid');
+  grid.innerHTML = TIPOS_VIA.map(v => `
+    <button class="via-btn ${v.id === currentVia.id ? 'active' : ''}"
+      onclick="selectVia('${v.id}')">
+      <span class="via-icon">${v.icon}</span>
+      ${v.label}<br>
+      <span class="via-limit">${v.limite}</span>
+    </button>
+  `).join('');
+}
+function selectVia(id) {
+  currentVia = TIPOS_VIA.find(v => v.id === id);
+  renderViaGrid();
+  update();
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  SPEED INPUT MODES
+// ══════════════════════════════════════════════════════════════════
+function setInputMode(mode) {
+  inputMode = mode;
+  document.getElementById('btnGPS').classList.toggle('active', mode === 'gps');
+  document.getElementById('btnManual').classList.toggle('active', mode === 'manual');
+  document.getElementById('manualControls').style.display = mode === 'manual' ? 'block' : 'none';
+  if (mode === 'gps') startGPS(); else stopGPS();
+}
+
+function setManualSpeed(val) {
+  val = parseInt(val);
+  document.getElementById('manualSlider').value = val;
+  document.getElementById('manualVal').textContent = val + ' km/h';
+  currentSpeed = val;
+  update();
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  GPS
+// ══════════════════════════════════════════════════════════════════
+function startGPS() {
+  if (!navigator.geolocation) {
+    setGPSStatus('error', 'GPS no disponible');
+    return;
+  }
+  setGPSStatus('waiting', 'Buscando señal…');
+  gpsWatchId = navigator.geolocation.watchPosition(
+    pos => {
+      const spd = pos.coords.speed != null ? pos.coords.speed * 3.6 : null;
+      currentSpeed = spd != null ? Math.round(spd) : currentSpeed;
+      lastLat = pos.coords.latitude;
+      lastLon = pos.coords.longitude;
+      const acc = Math.round(pos.coords.accuracy);
+      setGPSStatus('ok', `GPS ±${acc}m`);
+      document.getElementById('gpsCoords').textContent =
+        lastLat.toFixed(4) + ',' + lastLon.toFixed(4);
+      update();
+      // Auto-query OSM every ~200m (rough)
+      if (!osmQuerying) queryOSMLimit();
+    },
+    err => {
+      const msgs = { 1:'Permiso denegado', 2:'Posición no disponible', 3:'Tiempo agotado' };
+      setGPSStatus('error', msgs[err.code] || 'Error GPS');
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 2000 }
+  );
+}
+
+function stopGPS() {
+  if (gpsWatchId != null) navigator.geolocation.clearWatch(gpsWatchId);
+  setGPSStatus('error', 'GPS inactivo');
+}
+
+function setGPSStatus(state, text) {
+  const dot = document.getElementById('gpsDot');
+  dot.className = 'gps-dot ' + state;
+  document.getElementById('gpsText').textContent = text;
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  OPENSTREETMAP / OVERPASS API — límite de velocidad
+// ══════════════════════════════════════════════════════════════════
+async function queryOSMLimit() {
+  if (!lastLat || !lastLon || osmQuerying) return;
+  osmQuerying = true;
+  document.getElementById('osmStatus').textContent = '⟳ consultando OSM…';
+
+  // Buscar la vía más cercana con maxspeed en un radio de 50m
+  const query = `
+    [out:json][timeout:6];
+    way(around:50,${lastLat},${lastLon})[highway][maxspeed];
+    out tags 1;
+  `;
+  const url = 'https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(query);
+
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(7000) });
+    const data = await res.json();
+    if (data.elements && data.elements.length > 0) {
+      const el = data.elements[0];
+      const maxspeed = el.tags && el.tags.maxspeed;
+      if (maxspeed) {
+        const parsed = parseMaxspeed(maxspeed);
+        if (parsed) {
+          const found = TIPOS_VIA.reduce((best, v) =>
+            Math.abs(v.limite - parsed) < Math.abs(best.limite - parsed) ? v : best
+          );
+          currentVia = found;
+          // Override limit with exact OSM value
+          currentVia = { ...found, limite: parsed };
+          renderViaGrid();
+          document.getElementById('osmStatus').textContent = `✓ OSM: ${parsed} km/h`;
+          update();
+        }
+      }
+    } else {
+      document.getElementById('osmStatus').textContent = '– sin datos OSM';
+    }
+  } catch (e) {
+    document.getElementById('osmStatus').textContent = '✗ OSM sin respuesta';
+  } finally {
+    osmQuerying = false;
+    setTimeout(() => {
+      if (document.getElementById('osmStatus'))
+        document.getElementById('osmStatus').textContent = '';
+    }, 5000);
+  }
+}
+
+function parseMaxspeed(val) {
+  if (!val) return null;
+  const n = parseInt(val);
+  if (!isNaN(n)) return n;
+  // ES:urban = 50, ES:rural = 90, ES:motorway = 120
+  const map = { 'ES:urban':50, 'ES:rural':90, 'ES:motorway':120, 'ES:living_street':20 };
+  return map[val] || null;
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  CORE UPDATE
+// ══════════════════════════════════════════════════════════════════
+function getSancion(exceso) {
+  return sanciones.find(s => exceso >= s.minExceso && exceso <= s.maxExceso) || sanciones[0];
+}
+
+function update() {
+  const spd    = Math.max(0, Math.round(currentSpeed));
+  const limite = currentVia.limite;
+  const exceso = spd - limite;
+  const s      = getSancion(exceso);
+  const multa  = s.descuento ? s.multa * 0.5 : s.multa;  // shown as pronto pago when available
+  const pct    = Math.min(100, (spd / (limite * 2)) * 100);
+
+  // Speed value
+  const sv = document.getElementById('speedValue');
+  sv.textContent = spd;
+  sv.style.color = s.color;
+  sv.style.textShadow = `0 0 30px ${s.color}55`;
+
+  // Limit badge
+  document.getElementById('limitBadge').textContent = limite;
+
+  // Bar
+  document.getElementById('limitBarFill').style.width = pct + '%';
+  document.getElementById('limitBarFill').style.background =
+    `linear-gradient(90deg, #00ff88, ${s.color})`;
+
+  // Excess
+  const eb = document.getElementById('excessBadge');
+  eb.textContent = exceso > 0 ? '+' + exceso : (exceso < 0 ? exceso : '✓');
+  eb.style.color = s.color;
+
+  // Status dot color
+  document.getElementById('statusDot').style.background = s.color;
+  document.getElementById('statusDot').style.boxShadow  = `0 0 6px ${s.color}`;
+
+  // Window border
+  const fw = document.getElementById('floatWindow');
+  fw.className = '';
+  if (s.id === 'leve')    fw.classList.add('alert-warn');
+  if (s.id === 'grave' || s.id === 'muy_grave' || s.id === 'grave_ext') fw.classList.add('alert-bad');
+  if (s.id === 'penal')   fw.classList.add('alert-penal');
+
+  // Sanción card
+  let pills = '';
+  if (exceso > 0 && s.multa > 0) {
+    const multaDisplay = s.multa;
+    const pp = s.descuento ? `<span style="font-size:10px;color:#888"> (${Math.round(s.multa*0.5)}€ pronto pago)</span>` : '';
+    pills += `<span class="sancion-pill pill-multa">💶 ${multaDisplay}€${pp ? '' : ''}</span>`;
+    if (s.descuento) pills += `<span class="sancion-pill" style="background:rgba(255,229,0,0.1);color:#ffe500">50% dto → ${Math.round(s.multa*0.5)}€</span>`;
+  }
+  if (s.puntos > 0)  pills += `<span class="sancion-pill pill-puntos">−${s.puntos} pts</span>`;
+  if (s.carcel)      pills += `<span class="sancion-pill pill-carcel">⛓ Prisión posible</span>`;
+  if (exceso <= 0)   pills += `<span class="sancion-pill pill-ok">✓ Sin sanción</span>`;
+
+  const card = document.getElementById('sancionCard');
+  card.style.borderColor = s.color + '44';
+  card.style.background  = s.color + '0d';
+  card.innerHTML = `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+      <span style="font-size:20px">${getSancionIcon(s.id)}</span>
+      <div>
+        <div class="sancion-label" style="color:${s.color}">${s.label}</div>
+        <div class="sancion-desc">${s.desc}</div>
+      </div>
+    </div>
+    <div class="sancion-row">${pills}</div>
+    ${s.nota ? `<div class="sancion-nota">⚖ ${s.nota}</div>` : ''}
+  `;
+}
+
+function getSancionIcon(id) {
+  return { ok:'✅', leve:'⚠️', grave:'🚨', muy_grave:'🔴', grave_ext:'🆘', penal:'⛓' }[id] || '❓';
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  EDITOR
+// ══════════════════════════════════════════════════════════════════
+function renderEditor() {
+  const list = document.getElementById('sancionesEditorList');
+  list.innerHTML = sanciones.filter(s => s.id !== 'ok').map((s, i) => `
+    <div class="sancion-editor-item" style="border-left:3px solid ${s.color}">
+      <div style="font-size:13px;font-weight:700;color:${s.color};margin-bottom:8px;">
+        ${getSancionIcon(s.id)} ${s.label}
+      </div>
+      <div class="editor-row">
+        <span class="editor-label">Exceso mín.</span>
+        <input class="editor-input" type="number" data-field="minExceso" data-id="${s.id}" value="${s.minExceso}" min="0" max="300">
+        <span style="font-size:10px;color:var(--muted);margin-left:4px">km/h</span>
+      </div>
+      <div class="editor-row">
+        <span class="editor-label">Exceso máx.</span>
+        <input class="editor-input" type="number" data-field="maxExceso" data-id="${s.id}" value="${s.maxExceso === 999 ? 999 : s.maxExceso}" min="0" max="999">
+        <span style="font-size:10px;color:var(--muted);margin-left:4px">km/h (999=∞)</span>
+      </div>
+      <div class="editor-row">
+        <span class="editor-label">Multa (€)</span>
+        <input class="editor-input" type="number" data-field="multa" data-id="${s.id}" value="${s.multa}" min="0">
+      </div>
+      <div class="editor-row">
+        <span class="editor-label">Puntos –</span>
+        <input class="editor-input" type="number" data-field="puntos" data-id="${s.id}" value="${s.puntos}" min="0" max="12">
+      </div>
+      <div class="editor-row">
+        <label class="editor-check">
+          <input type="checkbox" data-field="descuento" data-id="${s.id}" ${s.descuento ? 'checked' : ''}>
+          Descuento 50% pronto pago
+        </label>
+      </div>
+      <div class="editor-row">
+        <label class="editor-check">
+          <input type="checkbox" data-field="carcel" data-id="${s.id}" ${s.carcel ? 'checked' : ''}>
+          Riesgo de prisión (Art. 379 CP)
+        </label>
+      </div>
+      <div class="editor-row">
+        <span class="editor-label">Nota</span>
+        <input class="editor-input" type="text" data-field="nota" data-id="${s.id}" value="${s.nota}" placeholder="Nota informativa…">
+      </div>
+    </div>
+  `).join('');
+}
+
+function saveSanciones() {
+  // Collect all inputs
+  document.querySelectorAll('[data-id]').forEach(el => {
+    const id    = el.dataset.id;
+    const field = el.dataset.field;
+    const idx   = sanciones.findIndex(s => s.id === id);
+    if (idx === -1) return;
+    if (el.type === 'checkbox')  sanciones[idx][field] = el.checked;
+    else if (el.type === 'number') sanciones[idx][field] = parseFloat(el.value) || 0;
+    else sanciones[idx][field] = el.value;
+  });
+  saveSancionesStorage(sanciones);
+  showToast('✓ Guardado correctamente');
+  update();
+}
+
+function resetSanciones() {
+  if (!confirm('¿Restaurar valores por defecto de la DGT?')) return;
+  sanciones = JSON.parse(JSON.stringify(DEFAULT_SANCIONES));
+  saveSancionesStorage(sanciones);
+  renderEditor();
+  update();
+  showToast('↺ Valores restaurados');
+}
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.textContent = msg;
+  Object.assign(t.style, {
+    position:'fixed', bottom:'60px', left:'50%', transform:'translateX(-50%)',
+    background:'#00ff8822', border:'1px solid #00ff8866', color:'#00ff88',
+    padding:'8px 16px', borderRadius:'20px', fontSize:'12px', zIndex:999999,
+    fontFamily:"'Share Tech Mono',monospace", letterSpacing:'1px',
+    pointerEvents:'none', transition:'opacity 0.3s',
+  });
+  document.body.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 2000);
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  DRAGGABLE + MINIMIZE
+// ══════════════════════════════════════════════════════════════════
+(function initDrag() {
+  const win = document.getElementById('floatWindow');
+  const bar = document.getElementById('titleBar');
+  let isDragging = false, startX, startY, startLeft, startTop;
+
+  function onDown(e) {
+    if (e.target.closest('.tb-btn')) return;
+    isDragging = true;
+    const pt = e.touches ? e.touches[0] : e;
+    startX = pt.clientX; startY = pt.clientY;
+    const r = win.getBoundingClientRect();
+    startLeft = r.left; startTop = r.top;
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('touchmove', onMove, { passive: false });
+    document.addEventListener('mouseup',  onUp);
+    document.addEventListener('touchend', onUp);
+  }
+  function onMove(e) {
+    if (!isDragging) return;
+    if (e.cancelable) e.preventDefault();
+    const pt = e.touches ? e.touches[0] : e;
+    const dx = pt.clientX - startX, dy = pt.clientY - startY;
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const w = win.offsetWidth, h = win.offsetHeight;
+    win.style.left = Math.max(0, Math.min(vw - w, startLeft + dx)) + 'px';
+    win.style.top  = Math.max(0, Math.min(vh - h, startTop  + dy)) + 'px';
+  }
+  function onUp() {
+    isDragging = false;
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('touchmove', onMove);
+    document.removeEventListener('mouseup',  onUp);
+    document.removeEventListener('touchend', onUp);
+  }
+
+  bar.addEventListener('mousedown', onDown);
+  bar.addEventListener('touchstart', onDown, { passive: false });
+})();
+
+document.getElementById('minimizeBtn').addEventListener('click', () => {
+  const w = document.getElementById('floatWindow');
+  w.classList.toggle('minimized');
+  document.getElementById('minimizeBtn').textContent = w.classList.contains('minimized') ? '□' : '_';
+});
+
+// ══════════════════════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════════════════════
+renderViaGrid();
+update();
+startGPS();
+
+// Polling update for GPS-derived speed
+setInterval(() => {
+  if (inputMode === 'gps') update();
+}, 1000);
+</script>
+<script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("./sw.js").then(r => console.log("SW ok", r)).catch(e => console.warn("SW err", e));
+}
+</script>
+</body>
+</html>
