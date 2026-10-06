@@ -30,6 +30,117 @@
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Rajdhani', sans-serif; overflow: hidden; }
 
+    /* ── SPEEDGUARD EDGE HALO V2 — Siri-inspired perimeter light ── */
+    #edgeHalo {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 99998;
+      opacity: 0;
+      transition: opacity .35s ease;
+      --halo-color: #00ff88;
+      --halo-alpha: .72;
+      --halo-width: 2px;
+      --halo-glow: 14px;
+      --halo-speed: 7s;
+      --halo-beam: 42deg;
+      --halo-bright: 1;
+      isolation: isolate;
+    }
+    #edgeHalo.active { opacity: 1; }
+
+    /* Thin luminous frame: intentionally concentrated at the physical screen edge. */
+    #edgeHalo::before {
+      content: '';
+      position: absolute;
+      inset: 2px;
+      border: var(--halo-width) solid var(--halo-color);
+      border-radius: 22px;
+      opacity: var(--halo-alpha);
+      box-shadow:
+        0 0 var(--halo-glow) var(--halo-color),
+        inset 0 0 0 0 var(--halo-color);
+      filter: blur(.15px);
+    }
+
+    /* Moving light — a small beam travels continuously around the perimeter. */
+    #edgeHalo::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      padding: 2px;
+      border-radius: 24px;
+      background:
+        conic-gradient(
+          transparent 0deg calc(360deg - var(--halo-beam)),
+          color-mix(in srgb, var(--halo-color) 18%, transparent) calc(360deg - var(--halo-beam) + 5deg),
+          var(--halo-color) calc(360deg - 25deg),
+          white calc(360deg - 15deg),
+          var(--halo-color) 359deg,
+          transparent 360deg
+        );
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      filter: blur(.2px) drop-shadow(0 0 var(--halo-glow) var(--halo-color));
+      animation: edgeSpin var(--halo-speed) linear infinite;
+      opacity: .92;
+      transform-origin: 50% 50%;
+      will-change: transform, opacity;
+    }
+
+    @keyframes edgeSpin {
+      from { transform: rotate(0deg) scale(1); }
+      to   { transform: rotate(360deg) scale(1); }
+    }
+
+    /* Severity profiles: speed, beam length and glow increase with danger. */
+    #edgeHalo.calm    { --halo-alpha:.45; --halo-width:1.5px; --halo-glow:8px;  --halo-speed:9s;   --halo-beam:28deg; }
+    #edgeHalo.warning { --halo-alpha:.72; --halo-width:2px;   --halo-glow:14px; --halo-speed:3.8s; --halo-beam:42deg; }
+    #edgeHalo.urgent  { --halo-alpha:.95; --halo-width:2.5px; --halo-glow:22px; --halo-speed:1.45s;--halo-beam:58deg; }
+    #edgeHalo.penal   { --halo-alpha:1;   --halo-width:3px;   --halo-glow:30px; --halo-speed:.72s; --halo-beam:78deg; }
+
+    /* The frame breathes gently; the moving beam remains sharp. */
+    #edgeHalo.calm::before    { animation: edgeBreathCalm 3.8s ease-in-out infinite; }
+    #edgeHalo.warning::before { animation: edgeBreathWarn 1.8s ease-in-out infinite; }
+    #edgeHalo.urgent::before  { animation: edgeBreathUrgent .75s ease-in-out infinite; }
+    #edgeHalo.penal::before   { animation: edgeBreathPenal .42s ease-in-out infinite; }
+
+    #edgeHalo.urgent::after { animation-name: edgeSpinUrgent; }
+    #edgeHalo.penal::after  { animation-name: edgeSpinPenal; }
+
+    @keyframes edgeBreathCalm {
+      0%,100% { opacity:.38; filter:brightness(.9); }
+      50% { opacity:.62; filter:brightness(1.15); }
+    }
+    @keyframes edgeBreathWarn {
+      0%,100% { opacity:.55; filter:brightness(.95); }
+      50% { opacity:.95; filter:brightness(1.3); }
+    }
+    @keyframes edgeBreathUrgent {
+      0%,100% { opacity:.60; filter:brightness(.95); }
+      50% { opacity:1; filter:brightness(1.55); }
+    }
+    @keyframes edgeBreathPenal {
+      0%,100% { opacity:.55; filter:brightness(1); }
+      50% { opacity:1; filter:brightness(1.9); }
+    }
+    @keyframes edgeSpinUrgent {
+      0% { transform:rotate(0deg) scale(1); opacity:.75; }
+      12% { opacity:1; }
+      100% { transform:rotate(360deg) scale(1.01); opacity:.95; }
+    }
+    @keyframes edgeSpinPenal {
+      0% { transform:rotate(0deg) scale(1); opacity:.65; }
+      8% { transform:rotate(29deg) scale(1.015); opacity:1; }
+      100% { transform:rotate(360deg) scale(1); opacity:.95; }
+    }
+
+    /* Older browsers without color-mix still get a usable frame. */
+    @supports not (background: color-mix(in srgb, red 20%, transparent)) {
+      #edgeHalo::after { background: conic-gradient(from var(--halo-angle), transparent 0deg 330deg, var(--halo-color) 340deg, white 346deg, transparent 355deg); }
+    }
+
     /* ── FLOATING WINDOW ─────────────────────── */
     #floatWindow {
       position: fixed;
@@ -256,11 +367,139 @@
     #floatWindow.minimized .nav-tabs,
     #floatWindow.minimized .gps-bar { display: none; }
 
+
+    /* ── DRIVING MODE ───────────────────────────────────── */
+    #driveModeBtn {
+      width:100%; min-height:42px; margin:8px 0 2px; padding:8px 12px;
+      border-radius:12px; border:1px solid rgba(0,255,136,.28);
+      background:rgba(0,255,136,.07); color:var(--ok);
+      font-family:'Rajdhani',sans-serif; font-size:13px; font-weight:700;
+      letter-spacing:1.5px; cursor:pointer; touch-action:manipulation;
+    }
+    #driveModeBtn.active { background:rgba(0,255,136,.16); border-color:rgba(0,255,136,.55); box-shadow:0 0 18px rgba(0,255,136,.08); }
+    .drive-status {
+      display:flex; align-items:center; justify-content:space-between; gap:8px;
+      margin:6px 0 2px; padding:6px 9px; border:1px solid var(--border);
+      border-radius:10px; background:rgba(255,255,255,.025);
+      font-family:'Share Tech Mono',monospace; font-size:10px;
+    }
+    .drive-status strong { font-size:11px; }
+    body.driving-mode #floatWindow { border-color:rgba(0,255,136,.16); }
+    body.driving-mode #titleBar { min-height:40px; }
+    body.driving-mode #speedScreen { padding-top:6px; }
+    body.driving-mode .speed-hero { padding:clamp(10px,3vh,24px) 0 8px; }
+    body.driving-mode .speed-value { font-size:clamp(88px,29vw,148px); line-height:.88; }
+    body.driving-mode .speed-unit { font-size:12px; letter-spacing:5px; margin-top:7px; }
+    body.driving-mode .limit-bar { margin:14px 0 12px; }
+    body.driving-mode .limit-badge { width:58px; height:58px; font-size:18px; border-width:4px; }
+    body.driving-mode .limit-bar-track { height:8px; }
+    body.driving-mode .excess-badge { font-size:16px; min-width:60px; }
+    body.driving-mode #driveModeBtn { background:rgba(255,255,255,.035); border-color:var(--border); color:var(--text); }
+    body.driving-mode #secondaryControls { display:none !important; }
+    body.driving-mode #viaSection { display:none; }
+    body.driving-mode #sancionCard { margin-top:10px; padding:12px 13px; }
+    body.driving-mode .sancion-label { font-size:16px; }
+    body.driving-mode .sancion-desc { font-size:12px; }
+    body.driving-mode .sancion-pill { font-size:13px; padding:5px 11px; }
+    body.driving-mode .sancion-nota { font-size:10px; }
+    @media (max-width:600px), (max-height:700px) {
+      body.driving-mode .speed-hero { padding-top:clamp(12px,4vh,28px); }
+      body.driving-mode .speed-value { font-size:clamp(92px,30vw,150px); }
+      body.driving-mode #sancionCard { margin-bottom:10px; }
+    }
+
+    /* ── MOBILE / PHONE LAYOUT ───────────────────────────── */
+    @media (max-width: 600px), (max-height: 700px) {
+      html, body {
+        width: 100%;
+        min-height: 100%;
+        height: 100%;
+        overflow: hidden;
+        overscroll-behavior: none;
+      }
+
+      #floatWindow {
+        position: fixed;
+        top: env(safe-area-inset-top, 0px);
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        max-width: none;
+        min-width: 0;
+        min-height: 0;
+        height: calc(100dvh - env(safe-area-inset-top, 0px));
+        border-radius: 0;
+        border-left: 0;
+        border-right: 0;
+        box-shadow: none;
+        resize: none;
+        overflow: hidden;
+      }
+
+      #titleBar {
+        padding: 7px 10px;
+        min-height: 42px;
+        padding-top: max(7px, env(safe-area-inset-top, 0px));
+      }
+
+      #mainContent {
+        min-height: 0;
+        height: auto;
+        flex: 1 1 auto;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-y: contain;
+        padding-bottom: 4px;
+      }
+
+      .screen {
+        padding: 10px 10px calc(14px + env(safe-area-inset-bottom, 0px));
+      }
+
+      .speed-hero { padding: 10px 0 5px; }
+      .speed-value { font-size: clamp(56px, 18vw, 76px); }
+
+      .nav-tabs {
+        min-height: 48px;
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+        background: rgba(10,10,15,.98);
+      }
+      .nav-tab { min-height: 48px; padding: 8px 2px; font-size: 10px; }
+
+      .gps-bar { min-height: 30px; padding: 5px 9px; }
+
+      #startBtn {
+        bottom: calc(58px + env(safe-area-inset-bottom, 0px));
+        max-width: calc(100vw - 32px);
+      }
+
+      .via-btn { min-height: 44px; }
+      .editor-input { min-height: 36px; font-size: 13px; }
+      .save-btn, .reset-btn, .dgt-link { min-height: 44px; }
+
+      .resize-hint { display: none; }
+    }
+
+    @media (max-width: 380px) {
+      .screen { padding-left: 8px; padding-right: 8px; }
+      .speed-value { font-size: 58px; }
+      .tb-title { font-size: 10px; letter-spacing: 1.5px; }
+      .tb-btn { width: 32px; height: 32px; }
+      .section-title { font-size: 10px; }
+    }
+
+    /* Respect iOS/Android reduced-motion preference. */
+    @media (prefers-reduced-motion: reduce) {
+      #edgeHalo::before, #edgeHalo::after, #floatWindow { animation: none !important; transition: none !important; }
+    }
+
     /* Scrollbar */
     * { scrollbar-width: thin; scrollbar-color: #222 transparent; }
   </style>
 </head>
 <body>
+<div id="edgeHalo" aria-hidden="true"></div>
 
 <!-- ═══════════════════════════════════════════════════════════
      FLOATING WINDOW
@@ -285,6 +524,14 @@
     <!-- ── SPEED SCREEN ── -->
     <div id="speedScreen" class="screen active">
 
+      <!-- Driving mode -->
+      <button id="driveModeBtn" onclick="toggleDrivingMode()">🚗 ACTIVAR MODO CONDUCCIÓN</button>
+      <div id="driveStatus" class="drive-status">
+        <span>ESTADO</span><strong id="driveStatusText">LISTO</strong>
+      </div>
+
+      <!-- Secondary controls -->
+      <div id="secondaryControls">
       <!-- GPS / Manual toggle -->
       <div style="display:flex;gap:6px;margin-bottom:8px;">
         <button class="via-btn active" id="btnGPS" onclick="setInputMode('gps')" style="flex:1;border-radius:8px;padding:6px;">
@@ -316,6 +563,7 @@
           <button onclick="setManualSpeed(160)" class="via-btn" style="flex:1;padding:4px;font-size:11px;">160</button>
         </div>
       </div>
+      </div><!-- /secondaryControls -->
 
       <!-- Speed hero -->
       <div class="speed-hero">
@@ -333,7 +581,7 @@
       </div>
 
       <!-- Via selector -->
-      <div style="margin-top:4px;">
+      <div id="viaSection" style="margin-top:4px;">
         <div class="section-title">VÍA ACTUAL <span id="osmStatus" style="font-size:9px;color:var(--muted)"></span></div>
         <div class="via-grid" id="viaGrid"></div>
       </div>
@@ -464,6 +712,26 @@ function loadSanciones() {
 }
 function saveSancionesStorage(data) {
   localStorage.setItem('sg_sanciones', JSON.stringify(data));
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  DRIVING MODE
+// ══════════════════════════════════════════════════════════════════
+let drivingMode = localStorage.getItem('sg_driving_mode') === '1';
+function applyDrivingMode() {
+  document.body.classList.toggle('driving-mode', drivingMode);
+  const btn = document.getElementById('driveModeBtn');
+  const status = document.getElementById('driveStatusText');
+  if (btn) { btn.textContent = drivingMode ? '✓ MODO CONDUCCIÓN ACTIVO' : '🚗 ACTIVAR MODO CONDUCCIÓN'; btn.classList.toggle('active', drivingMode); }
+  if (status) status.textContent = drivingMode ? 'VIGILANDO' : 'LISTO';
+}
+function toggleDrivingMode() {
+  drivingMode = !drivingMode;
+  localStorage.setItem('sg_driving_mode', drivingMode ? '1' : '0');
+  applyDrivingMode();
+  // Put the speed display back at the top when entering driving mode.
+  const mc = document.getElementById('mainContent');
+  if (mc) mc.scrollTop = 0;
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -626,6 +894,8 @@ function getSancion(exceso) {
 
 function update() {
   const spd    = Math.max(0, Math.round(currentSpeed));
+  const dst = document.getElementById('driveStatusText');
+  if (dst) dst.textContent = (inputMode === 'gps' ? (lastLat !== null ? 'GPS ACTIVO' : 'ESPERANDO GPS') : 'MANUAL');
   const limite = currentVia.limite;
   const exceso = spd - limite;
   const s      = getSancion(exceso);
@@ -661,6 +931,25 @@ function update() {
   if (s.id === 'leve')    fw.classList.add('alert-warn');
   if (s.id === 'grave' || s.id === 'muy_grave' || s.id === 'grave_ext') fw.classList.add('alert-bad');
   if (s.id === 'penal')   fw.classList.add('alert-penal');
+
+  // Siri-inspired perimeter halo. It stays concentrated on the screen edge.
+  const halo = document.getElementById('edgeHalo');
+  if (halo) {
+    const color = s.id === 'ok' ? '#00ff88' : (s.color || '#00ff88');
+    halo.style.setProperty('--halo-color', color);
+    halo.className = 'active';
+    if (exceso <= 0 || s.id === 'ok') {
+      halo.classList.add('calm');
+    } else if (s.id === 'leve') {
+      halo.classList.add('warning');
+    } else if (s.id === 'grave' || s.id === 'muy_grave' || s.id === 'grave_ext') {
+      halo.classList.add('urgent');
+    } else if (s.id === 'penal') {
+      halo.classList.add('penal');
+    } else {
+      halo.classList.add('warning');
+    }
+  }
 
   // Sanción card
   let pills = '';
@@ -833,6 +1122,7 @@ document.getElementById('minimizeBtn').addEventListener('click', () => {
 //  INIT
 // ══════════════════════════════════════════════════════════════════
 renderViaGrid();
+applyDrivingMode();
 update();
 startGPS();
 
