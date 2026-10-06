@@ -30,7 +30,7 @@
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Rajdhani', sans-serif; overflow: hidden; }
 
-    /* ── SPEEDGUARD EDGE HALO V2 — Siri-inspired perimeter light ── */
+    /* ── SPEEDGUARD EDGE HALO V3 — thick four-side perimeter with inward fade ── */
     #edgeHalo {
       position: fixed;
       inset: 0;
@@ -39,41 +39,42 @@
       opacity: 0;
       transition: opacity .35s ease;
       --halo-color: #00ff88;
-      --halo-alpha: .72;
-      --halo-width: 5px;
-      --halo-glow: 22px;
+      --halo-alpha: .82;
+      --halo-width: 10px;
+      --halo-glow: 34px;
       --halo-speed: 7s;
       --halo-beam: 42deg;
-      --halo-bright: 1;
       isolation: isolate;
     }
     #edgeHalo.active { opacity: 1; }
 
-    /* Thin luminous frame: intentionally concentrated at the physical screen edge. */
+    /* Thick luminous frame. The inset shadow creates a strong-to-soft gradient toward screen centre. */
     #edgeHalo::before {
       content: '';
       position: absolute;
-      inset: 3px;
+      inset: 0;
       border: var(--halo-width) solid var(--halo-color);
       border-radius: 20px;
       opacity: var(--halo-alpha);
       box-shadow:
         0 0 var(--halo-glow) var(--halo-color),
-        inset 0 0 0 0 var(--halo-color);
+        inset 0 0 18px var(--halo-color),
+        inset 0 0 42px color-mix(in srgb, var(--halo-color) 72%, transparent),
+        inset 0 0 75px color-mix(in srgb, var(--halo-color) 34%, transparent);
       filter: blur(.15px);
     }
 
-    /* Moving light — a small beam travels continuously around the perimeter. */
+    /* Moving beam around the complete perimeter. */
     #edgeHalo::after {
       content: '';
       position: absolute;
       inset: 0;
-      padding: 5px;
-      border-radius: 22px;
+      padding: var(--halo-width);
+      border-radius: 20px;
       background:
         conic-gradient(
           transparent 0deg calc(360deg - var(--halo-beam)),
-          color-mix(in srgb, var(--halo-color) 18%, transparent) calc(360deg - var(--halo-beam) + 5deg),
+          color-mix(in srgb, var(--halo-color) 28%, transparent) calc(360deg - var(--halo-beam) + 5deg),
           var(--halo-color) calc(360deg - 25deg),
           white calc(360deg - 15deg),
           var(--halo-color) 359deg,
@@ -84,21 +85,21 @@
       mask-composite: exclude;
       filter: blur(.2px) drop-shadow(0 0 var(--halo-glow) var(--halo-color));
       animation: edgeSpin var(--halo-speed) linear infinite;
-      opacity: .92;
+      opacity: .98;
       transform-origin: 50% 50%;
       will-change: transform, opacity;
     }
 
     @keyframes edgeSpin {
-      from { transform: rotate(0deg) scale(1); }
-      to   { transform: rotate(360deg) scale(1); }
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
     }
 
     /* Severity profiles: speed, beam length and glow increase with danger. */
-    #edgeHalo.calm    { --halo-alpha:.62; --halo-width:4px; --halo-glow:14px;  --halo-speed:9s;   --halo-beam:28deg; }
-    #edgeHalo.warning { --halo-alpha:.82; --halo-width:5px;   --halo-glow:22px; --halo-speed:3.8s; --halo-beam:42deg; }
-    #edgeHalo.urgent  { --halo-alpha:1;   --halo-width:6px;   --halo-glow:30px; --halo-speed:1.45s;--halo-beam:58deg; }
-    #edgeHalo.penal   { --halo-alpha:1;   --halo-width:7px;   --halo-glow:38px; --halo-speed:.72s; --halo-beam:78deg; }
+    #edgeHalo.calm    { --halo-alpha:.70; --halo-width:8px; --halo-glow:24px;  --halo-speed:9s;   --halo-beam:28deg; }
+    #edgeHalo.warning { --halo-alpha:.88; --halo-width:10px;  --halo-glow:34px; --halo-speed:3.8s; --halo-beam:42deg; }
+    #edgeHalo.urgent  { --halo-alpha:1;   --halo-width:12px;  --halo-glow:44px; --halo-speed:1.45s;--halo-beam:58deg; }
+    #edgeHalo.penal   { --halo-alpha:1;   --halo-width:14px;  --halo-glow:54px; --halo-speed:.72s; --halo-beam:78deg; }
 
     /* The frame breathes gently; the moving beam remains sharp. */
     #edgeHalo.calm::before    { animation: edgeBreathCalm 3.8s ease-in-out infinite; }
@@ -495,12 +496,12 @@
         z-index: 100000;
       }
       #edgeHalo::before {
-        inset: 2px;
-        border-radius: 18px;
+        inset: 0;
+        border-radius: 20px;
       }
       #edgeHalo::after {
         inset: 0;
-        padding: 5px;
+        padding: var(--halo-width);
         border-radius: 20px;
       }
     }

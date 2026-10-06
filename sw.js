@@ -1,5 +1,5 @@
 // SpeedGuard DGT — Service Worker
-const CACHE = 'speedguard-mobile-v2';
+const CACHE = 'speedguard-mobile-v4';
 const ASSETS = [
   './',
   './index.html',
