@@ -35,13 +35,13 @@
       position: fixed;
       inset: 0;
       pointer-events: none;
-      z-index: 99998;
+      z-index: 100000;
       opacity: 0;
       transition: opacity .35s ease;
       --halo-color: #00ff88;
       --halo-alpha: .72;
-      --halo-width: 2px;
-      --halo-glow: 14px;
+      --halo-width: 5px;
+      --halo-glow: 22px;
       --halo-speed: 7s;
       --halo-beam: 42deg;
       --halo-bright: 1;
@@ -53,9 +53,9 @@
     #edgeHalo::before {
       content: '';
       position: absolute;
-      inset: 2px;
+      inset: 3px;
       border: var(--halo-width) solid var(--halo-color);
-      border-radius: 22px;
+      border-radius: 20px;
       opacity: var(--halo-alpha);
       box-shadow:
         0 0 var(--halo-glow) var(--halo-color),
@@ -68,8 +68,8 @@
       content: '';
       position: absolute;
       inset: 0;
-      padding: 2px;
-      border-radius: 24px;
+      padding: 5px;
+      border-radius: 22px;
       background:
         conic-gradient(
           transparent 0deg calc(360deg - var(--halo-beam)),
@@ -95,10 +95,10 @@
     }
 
     /* Severity profiles: speed, beam length and glow increase with danger. */
-    #edgeHalo.calm    { --halo-alpha:.45; --halo-width:1.5px; --halo-glow:8px;  --halo-speed:9s;   --halo-beam:28deg; }
-    #edgeHalo.warning { --halo-alpha:.72; --halo-width:2px;   --halo-glow:14px; --halo-speed:3.8s; --halo-beam:42deg; }
-    #edgeHalo.urgent  { --halo-alpha:.95; --halo-width:2.5px; --halo-glow:22px; --halo-speed:1.45s;--halo-beam:58deg; }
-    #edgeHalo.penal   { --halo-alpha:1;   --halo-width:3px;   --halo-glow:30px; --halo-speed:.72s; --halo-beam:78deg; }
+    #edgeHalo.calm    { --halo-alpha:.62; --halo-width:4px; --halo-glow:14px;  --halo-speed:9s;   --halo-beam:28deg; }
+    #edgeHalo.warning { --halo-alpha:.82; --halo-width:5px;   --halo-glow:22px; --halo-speed:3.8s; --halo-beam:42deg; }
+    #edgeHalo.urgent  { --halo-alpha:1;   --halo-width:6px;   --halo-glow:30px; --halo-speed:1.45s;--halo-beam:58deg; }
+    #edgeHalo.penal   { --halo-alpha:1;   --halo-width:7px;   --halo-glow:38px; --halo-speed:.72s; --halo-beam:78deg; }
 
     /* The frame breathes gently; the moving beam remains sharp. */
     #edgeHalo.calm::before    { animation: edgeBreathCalm 3.8s ease-in-out infinite; }
@@ -487,6 +487,22 @@
       .tb-title { font-size: 10px; letter-spacing: 1.5px; }
       .tb-btn { width: 32px; height: 32px; }
       .section-title { font-size: 10px; }
+    }
+
+    /* Mobile: the halo must remain visible over the full-screen app, including both side edges. */
+    @media (max-width: 600px) {
+      #edgeHalo {
+        z-index: 100000;
+      }
+      #edgeHalo::before {
+        inset: 2px;
+        border-radius: 18px;
+      }
+      #edgeHalo::after {
+        inset: 0;
+        padding: 5px;
+        border-radius: 20px;
+      }
     }
 
     /* Respect iOS/Android reduced-motion preference. */
