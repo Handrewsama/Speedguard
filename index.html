@@ -30,116 +30,76 @@
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Rajdhani', sans-serif; overflow: hidden; }
 
-    /* ── SPEEDGUARD EDGE HALO V3 — thick four-side perimeter with inward fade ── */
+    /* ── SPEEDGUARD EDGE HALO V5 — visible four-side light field ── */
     #edgeHalo {
       position: fixed;
       inset: 0;
       pointer-events: none;
-      z-index: 100000;
+      z-index: 2147483647;
       opacity: 0;
-      transition: opacity .35s ease;
+      transition: opacity .25s ease;
       --halo-color: #00ff88;
-      --halo-alpha: .82;
-      --halo-width: 10px;
-      --halo-glow: 34px;
+      --halo-alpha: .92;
+      --halo-width: 18px;
+      --halo-glow: 38px;
       --halo-speed: 7s;
       --halo-beam: 42deg;
       isolation: isolate;
     }
     #edgeHalo.active { opacity: 1; }
 
-    /* Thick luminous frame. The inset shadow creates a strong-to-soft gradient toward screen centre. */
+    /* A real four-side frame. The second layer fades strongly toward the centre. */
     #edgeHalo::before {
       content: '';
       position: absolute;
       inset: 0;
       border: var(--halo-width) solid var(--halo-color);
-      border-radius: 20px;
+      border-radius: 18px;
       opacity: var(--halo-alpha);
       box-shadow:
-        0 0 var(--halo-glow) var(--halo-color),
-        inset 0 0 18px var(--halo-color),
-        inset 0 0 42px color-mix(in srgb, var(--halo-color) 72%, transparent),
-        inset 0 0 75px color-mix(in srgb, var(--halo-color) 34%, transparent);
-      filter: blur(.15px);
+        0 0 var(--halo-glow) 3px var(--halo-color),
+        0 0 calc(var(--halo-glow) * 1.7) 0 color-mix(in srgb, var(--halo-color) 70%, transparent),
+        inset 0 0 24px var(--halo-color),
+        inset 0 0 65px color-mix(in srgb, var(--halo-color) 48%, transparent),
+        inset 0 0 125px color-mix(in srgb, var(--halo-color) 22%, transparent);
+      filter: brightness(1.15);
     }
 
-    /* Moving beam around the complete perimeter. */
+    /* Broad inward gradient, strongest at the edge and progressively softer inside. */
     #edgeHalo::after {
       content: '';
       position: absolute;
       inset: 0;
+      border-radius: 18px;
       padding: var(--halo-width);
-      border-radius: 20px;
       background:
-        conic-gradient(
-          transparent 0deg calc(360deg - var(--halo-beam)),
-          color-mix(in srgb, var(--halo-color) 28%, transparent) calc(360deg - var(--halo-beam) + 5deg),
-          var(--halo-color) calc(360deg - 25deg),
-          white calc(360deg - 15deg),
-          var(--halo-color) 359deg,
-          transparent 360deg
-        );
-      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-      -webkit-mask-composite: xor;
-      mask-composite: exclude;
-      filter: blur(.2px) drop-shadow(0 0 var(--halo-glow) var(--halo-color));
+        linear-gradient(to bottom, color-mix(in srgb, var(--halo-color) 92%, transparent), transparent 100%) top / 100% 28% no-repeat,
+        linear-gradient(to top, color-mix(in srgb, var(--halo-color) 92%, transparent), transparent 100%) bottom / 100% 28% no-repeat,
+        linear-gradient(to right, color-mix(in srgb, var(--halo-color) 92%, transparent), transparent 100%) left / 28% 100% no-repeat,
+        linear-gradient(to left, color-mix(in srgb, var(--halo-color) 92%, transparent), transparent 100%) right / 28% 100% no-repeat;
+      filter: blur(1px) drop-shadow(0 0 var(--halo-glow) var(--halo-color));
       animation: edgeSpin var(--halo-speed) linear infinite;
-      opacity: .98;
-      transform-origin: 50% 50%;
-      will-change: transform, opacity;
+      opacity: .95;
+      will-change: opacity, filter;
     }
 
     @keyframes edgeSpin {
-      from { transform: rotate(0deg); }
-      to   { transform: rotate(360deg); }
+      0%,100% { filter: blur(1px) drop-shadow(0 0 var(--halo-glow) var(--halo-color)); }
+      50% { filter: blur(1.5px) drop-shadow(0 0 calc(var(--halo-glow) * 1.35) var(--halo-color)); }
     }
 
-    /* Severity profiles: speed, beam length and glow increase with danger. */
-    #edgeHalo.calm    { --halo-alpha:.70; --halo-width:8px; --halo-glow:24px;  --halo-speed:9s;   --halo-beam:28deg; }
-    #edgeHalo.warning { --halo-alpha:.88; --halo-width:10px;  --halo-glow:34px; --halo-speed:3.8s; --halo-beam:42deg; }
-    #edgeHalo.urgent  { --halo-alpha:1;   --halo-width:12px;  --halo-glow:44px; --halo-speed:1.45s;--halo-beam:58deg; }
-    #edgeHalo.penal   { --halo-alpha:1;   --halo-width:14px;  --halo-glow:54px; --halo-speed:.72s; --halo-beam:78deg; }
+    #edgeHalo.calm    { --halo-alpha:.78; --halo-width:14px; --halo-glow:30px; --halo-speed:9s; }
+    #edgeHalo.warning { --halo-alpha:.92; --halo-width:18px; --halo-glow:42px; --halo-speed:3.8s; }
+    #edgeHalo.urgent  { --halo-alpha:1;   --halo-width:22px; --halo-glow:58px; --halo-speed:1.45s; }
+    #edgeHalo.penal   { --halo-alpha:1;   --halo-width:26px; --halo-glow:72px; --halo-speed:.72s; }
 
-    /* The frame breathes gently; the moving beam remains sharp. */
-    #edgeHalo.calm::before    { animation: edgeBreathCalm 3.8s ease-in-out infinite; }
-    #edgeHalo.warning::before { animation: edgeBreathWarn 1.8s ease-in-out infinite; }
-    #edgeHalo.urgent::before  { animation: edgeBreathUrgent .75s ease-in-out infinite; }
-    #edgeHalo.penal::before   { animation: edgeBreathPenal .42s ease-in-out infinite; }
-
-    #edgeHalo.urgent::after { animation-name: edgeSpinUrgent; }
-    #edgeHalo.penal::after  { animation-name: edgeSpinPenal; }
-
-    @keyframes edgeBreathCalm {
-      0%,100% { opacity:.38; filter:brightness(.9); }
-      50% { opacity:.62; filter:brightness(1.15); }
-    }
-    @keyframes edgeBreathWarn {
-      0%,100% { opacity:.55; filter:brightness(.95); }
-      50% { opacity:.95; filter:brightness(1.3); }
-    }
-    @keyframes edgeBreathUrgent {
-      0%,100% { opacity:.60; filter:brightness(.95); }
-      50% { opacity:1; filter:brightness(1.55); }
-    }
-    @keyframes edgeBreathPenal {
-      0%,100% { opacity:.55; filter:brightness(1); }
-      50% { opacity:1; filter:brightness(1.9); }
-    }
-    @keyframes edgeSpinUrgent {
-      0% { transform:rotate(0deg) scale(1); opacity:.75; }
-      12% { opacity:1; }
-      100% { transform:rotate(360deg) scale(1.01); opacity:.95; }
-    }
-    @keyframes edgeSpinPenal {
-      0% { transform:rotate(0deg) scale(1); opacity:.65; }
-      8% { transform:rotate(29deg) scale(1.015); opacity:1; }
-      100% { transform:rotate(360deg) scale(1); opacity:.95; }
-    }
-
-    /* Older browsers without color-mix still get a usable frame. */
-    @supports not (background: color-mix(in srgb, red 20%, transparent)) {
-      #edgeHalo::after { background: conic-gradient(from var(--halo-angle), transparent 0deg 330deg, var(--halo-color) 340deg, white 346deg, transparent 355deg); }
+    @media (max-width: 600px) {
+      #edgeHalo { z-index: 2147483647; }
+      #edgeHalo::before, #edgeHalo::after { border-radius: 16px; }
+      #edgeHalo.calm { --halo-width:16px; }
+      #edgeHalo.warning { --halo-width:22px; }
+      #edgeHalo.urgent { --halo-width:28px; }
+      #edgeHalo.penal { --halo-width:32px; }
     }
 
     /* ── FLOATING WINDOW ─────────────────────── */
@@ -182,6 +142,7 @@
     #titleBar:active { cursor: grabbing; }
     .tb-left { display: flex; align-items: center; gap: 8px; }
     .tb-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 6px var(--ok); }
+    .app-version { font-size: 9px; letter-spacing: 1px; padding: 2px 5px; margin-left: 4px; border: 1px solid currentColor; border-radius: 5px; opacity: .9; vertical-align: 1px; }
     .tb-title { font-family: 'Share Tech Mono', monospace; font-size: 12px; letter-spacing: 2px; color: var(--ok); }
     .tb-actions { display: flex; gap: 6px; }
     .tb-btn {
@@ -527,7 +488,7 @@
   <div id="titleBar">
     <div class="tb-left">
       <div class="tb-dot" id="statusDot"></div>
-      <span class="tb-title">SPEEDGUARD</span>
+      <span class="tb-title">SPEEDGUARD <span class="app-version">V5</span></span>
     </div>
     <div class="tb-actions">
       <button class="tb-btn" id="minimizeBtn" title="Minimizar">_</button>
