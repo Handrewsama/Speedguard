@@ -44,6 +44,9 @@
       --halo-glow: 38px;
       --halo-speed: 7s;
       --halo-beam: 42deg;
+      --halo-gradient: 28%;
+      --halo-intensity: 1;
+      --halo-beam-opacity: .95;
       isolation: isolate;
     }
     #edgeHalo.active { opacity: 1; }
@@ -55,7 +58,7 @@
       inset: 0;
       border: var(--halo-width) solid var(--halo-color);
       border-radius: 18px;
-      opacity: var(--halo-alpha);
+      opacity: calc(var(--halo-alpha) * var(--halo-intensity));
       box-shadow:
         0 0 var(--halo-glow) 3px var(--halo-color),
         0 0 calc(var(--halo-glow) * 1.7) 0 color-mix(in srgb, var(--halo-color) 70%, transparent),
@@ -73,13 +76,13 @@
       border-radius: 18px;
       padding: var(--halo-width);
       background:
-        linear-gradient(to bottom, color-mix(in srgb, var(--halo-color) 92%, transparent), transparent 100%) top / 100% 28% no-repeat,
-        linear-gradient(to top, color-mix(in srgb, var(--halo-color) 92%, transparent), transparent 100%) bottom / 100% 28% no-repeat,
-        linear-gradient(to right, color-mix(in srgb, var(--halo-color) 92%, transparent), transparent 100%) left / 28% 100% no-repeat,
-        linear-gradient(to left, color-mix(in srgb, var(--halo-color) 92%, transparent), transparent 100%) right / 28% 100% no-repeat;
+        linear-gradient(to bottom, color-mix(in srgb, var(--halo-color) 92%, transparent), transparent 100%) top / 100% var(--halo-gradient) no-repeat,
+        linear-gradient(to top, color-mix(in srgb, var(--halo-color) 92%, transparent), transparent 100%) bottom / 100% var(--halo-gradient) no-repeat,
+        linear-gradient(to right, color-mix(in srgb, var(--halo-color) 92%, transparent), transparent 100%) left / var(--halo-gradient) 100% no-repeat,
+        linear-gradient(to left, color-mix(in srgb, var(--halo-color) 92%, transparent), transparent 100%) right / var(--halo-gradient) 100% no-repeat;
       filter: blur(1px) drop-shadow(0 0 var(--halo-glow) var(--halo-color));
       animation: edgeSpin var(--halo-speed) linear infinite;
-      opacity: .95;
+      opacity: var(--halo-beam-opacity);
       will-change: opacity, filter;
     }
 
@@ -472,6 +475,19 @@
       #edgeHalo::before, #edgeHalo::after, #floatWindow { animation: none !important; transition: none !important; }
     }
 
+    /* ── HALO SETTINGS ───────────────────────── */
+    .halo-settings { margin-top:14px; padding:12px; border:1px solid var(--border); border-radius:12px; background:rgba(255,255,255,.025); }
+    .halo-setting { margin-top:10px; }
+    .halo-setting:first-child { margin-top:0; }
+    .halo-setting-head { display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:11px; color:var(--muted); }
+    .halo-setting-head strong { color:var(--text); font-size:12px; }
+    .halo-range { width:100%; accent-color:var(--ok); margin-top:5px; }
+    .halo-preview { height:58px; margin-top:10px; border-radius:12px; position:relative; overflow:hidden; background:#050509; border:1px solid #222; }
+    .halo-preview::before { content:''; position:absolute; inset:0; border:var(--preview-width,10px) solid var(--preview-color,#00ff88); box-shadow:inset 0 0 var(--preview-glow,24px) var(--preview-color,#00ff88), 0 0 var(--preview-glow,24px) var(--preview-color,#00ff88); opacity:var(--preview-alpha,.9); }
+    .halo-preview::after { content:''; position:absolute; inset:0; background:linear-gradient(to bottom,var(--preview-color,#00ff88),transparent 70%) top/100% var(--preview-gradient,55%) no-repeat,linear-gradient(to top,var(--preview-color,#00ff88),transparent 70%) bottom/100% var(--preview-gradient,55%) no-repeat,linear-gradient(to right,var(--preview-color,#00ff88),transparent 70%) left/var(--preview-gradient,55%) 100% no-repeat,linear-gradient(to left,var(--preview-color,#00ff88),transparent 70%) right/var(--preview-gradient,55%) 100% no-repeat; opacity:.45; pointer-events:none; }
+    .halo-preset-row { display:flex; gap:6px; margin-top:9px; }
+    .halo-preset-row button { flex:1; min-height:38px; }
+
     /* Scrollbar */
     * { scrollbar-width: thin; scrollbar-color: #222 transparent; }
   </style>
@@ -488,7 +504,7 @@
   <div id="titleBar">
     <div class="tb-left">
       <div class="tb-dot" id="statusDot"></div>
-      <span class="tb-title">SPEEDGUARD <span class="app-version">V5</span></span>
+      <span class="tb-title">SPEEDGUARD <span class="app-version">V7</span></span>
     </div>
     <div class="tb-actions">
       <button class="tb-btn" id="minimizeBtn" title="Minimizar">_</button>
@@ -577,6 +593,19 @@
 
       <button class="save-btn" onclick="saveSanciones()">💾 GUARDAR CAMBIOS</button>
       <button class="reset-btn" onclick="resetSanciones()">↺ Restaurar por defecto</button>
+
+      <div class="halo-settings">
+        <div class="section-title">💡 IL·LUMINACIÓ DEL MARC</div>
+        <div class="halo-preview" id="haloPreview"></div>
+        <div class="halo-setting"><div class="halo-setting-head"><strong>Gruix</strong><span id="haloWidthValue">18 px</span></div><input class="halo-range" id="haloWidthRange" type="range" min="4" max="40" step="1"></div>
+        <div class="halo-setting"><div class="halo-setting-head"><strong>Brillantor</strong><span id="haloIntensityValue">100%</span></div><input class="halo-range" id="haloIntensityRange" type="range" min="30" max="180" step="5"></div>
+        <div class="halo-setting"><div class="halo-setting-head"><strong>Glow</strong><span id="haloGlowValue">38 px</span></div><input class="halo-range" id="haloGlowRange" type="range" min="0" max="120" step="2"></div>
+        <div class="halo-setting"><div class="halo-setting-head"><strong>Degradat cap al centre</strong><span id="haloGradientValue">55%</span></div><input class="halo-range" id="haloGradientRange" type="range" min="10" max="90" step="5"></div>
+        <div class="halo-setting"><div class="halo-setting-head"><strong>Intensitat del feix</strong><span id="haloBeamValue">95%</span></div><input class="halo-range" id="haloBeamRange" type="range" min="10" max="100" step="5"></div>
+        <div class="halo-setting"><div class="halo-setting-head"><strong>Velocitat del moviment</strong><span id="haloSpeedValue">1×</span></div><input class="halo-range" id="haloSpeedRange" type="range" min="0" max="200" step="10"></div>
+        <div class="halo-preset-row"><button class="via-btn" onclick="setHaloPreset('discret')">Discret</button><button class="via-btn" onclick="setHaloPreset('normal')">Normal</button><button class="via-btn" onclick="setHaloPreset('intens')">Intens</button></div>
+        <button class="reset-btn" style="margin-top:7px" onclick="resetHaloSettings()">↺ Restaurar il·luminació</button>
+      </div>
 
       <div style="margin-top:12px;">
         <div class="section-title">FUENTE OFICIAL</div>
@@ -1097,9 +1126,57 @@ document.getElementById('minimizeBtn').addEventListener('click', () => {
 });
 
 // ══════════════════════════════════════════════════════════════════
+//  HALO CONFIGURATION
+// ══════════════════════════════════════════════════════════════════
+const DEFAULT_HALO_SETTINGS = { width:9, intensity:82, glow:24, gradient:48, beam:80, speed:100 };
+const HALO_SETTINGS_VERSION = 2;
+let haloSettings = {...DEFAULT_HALO_SETTINGS, ...(JSON.parse(localStorage.getItem('sg_halo_settings') || '{}'))};
+if (Number(localStorage.getItem('sg_halo_settings_version') || 0) < HALO_SETTINGS_VERSION) {
+  haloSettings = {...DEFAULT_HALO_SETTINGS};
+  localStorage.setItem('sg_halo_settings_version', String(HALO_SETTINGS_VERSION));
+}
+
+function applyHaloSettings() {
+  const halo = document.getElementById('edgeHalo');
+  if (!halo) return;
+  halo.style.setProperty('--halo-width', haloSettings.width + 'px');
+  halo.style.setProperty('--halo-glow', haloSettings.glow + 'px');
+  halo.style.setProperty('--halo-gradient', haloSettings.gradient + '%');
+  halo.style.setProperty('--halo-intensity', haloSettings.intensity / 100);
+  halo.style.setProperty('--halo-beam-opacity', haloSettings.beam / 100);
+  // 0 = static, 200 = twice as fast. 100 = default.
+  if (haloSettings.speed === 0) halo.style.setProperty('--halo-speed', '999999s');
+  else halo.style.setProperty('--halo-speed', Math.max(.18, 7 / (haloSettings.speed / 100)) + 's');
+  localStorage.setItem('sg_halo_settings', JSON.stringify(haloSettings));
+  updateHaloControls();
+}
+
+function updateHaloControls() {
+  const map = { haloWidthRange:['haloWidthValue', v=>v+' px'], haloIntensityRange:['haloIntensityValue', v=>v+'%'], haloGlowRange:['haloGlowValue', v=>v+' px'], haloGradientRange:['haloGradientValue', v=>v+'%'], haloBeamRange:['haloBeamValue', v=>v+'%'], haloSpeedRange:['haloSpeedValue', v=>v==0?'Aturat':(v/100).toFixed(1)+'×'] };
+  Object.entries(map).forEach(([id,[out,fmt]])=>{ const el=document.getElementById(id), target=document.getElementById(out); if(el&&target){el.value=haloSettings[{haloWidthRange:'width',haloIntensityRange:'intensity',haloGlowRange:'glow',haloGradientRange:'gradient',haloBeamRange:'beam',haloSpeedRange:'speed'}[id]]; target.textContent=fmt(el.value);}});
+  const preview=document.getElementById('haloPreview');
+  if(preview){ preview.style.setProperty('--preview-width',Math.min(20,Math.max(3,haloSettings.width/2))+'px'); preview.style.setProperty('--preview-glow',Math.min(55,haloSettings.glow)+'px'); preview.style.setProperty('--preview-gradient',haloSettings.gradient+'%'); preview.style.setProperty('--preview-alpha',Math.min(1.5,haloSettings.intensity/100)); }
+}
+
+function bindHaloControls() {
+  const ids={haloWidthRange:'width',haloIntensityRange:'intensity',haloGlowRange:'glow',haloGradientRange:'gradient',haloBeamRange:'beam',haloSpeedRange:'speed'};
+  Object.entries(ids).forEach(([id,key])=>{ const el=document.getElementById(id); if(!el) return; el.addEventListener('input',()=>{haloSettings[key]=Number(el.value); applyHaloSettings();}); });
+  updateHaloControls();
+}
+
+function setHaloPreset(name){
+  const presets={discret:{width:6,intensity:55,glow:14,gradient:32,beam:55,speed:70},normal:{width:9,intensity:82,glow:24,gradient:48,beam:80,speed:100},intens:{width:18,intensity:135,glow:60,gradient:70,beam:100,speed:160}};
+  haloSettings={...presets[name]}; applyHaloSettings();
+}
+function resetHaloSettings(){ haloSettings={...DEFAULT_HALO_SETTINGS}; applyHaloSettings(); }
+
+applyHaloSettings();
+
+// ══════════════════════════════════════════════════════════════════
 //  INIT
 // ══════════════════════════════════════════════════════════════════
 renderViaGrid();
+bindHaloControls();
 applyDrivingMode();
 update();
 startGPS();
