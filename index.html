@@ -105,6 +105,35 @@
       #edgeHalo.penal { --halo-width:32px; }
     }
 
+    /* ── RADAR DE TRAM ───────────────────────── */
+    .auto-radar-alert{margin:-4px 0 10px;padding:10px 11px;border-radius:11px;border:1px solid #33404a;background:#0d1518;color:#eafcff;font-size:11px;line-height:1.35;font-weight:700}
+    .auto-radar-alert.fixed{border-color:#3b4630;background:#12170e;color:#dfff9b}
+    .auto-radar-alert.average{border-color:#394a63;background:#0d131b;color:#9ed5ff}
+    .auto-radar-alert.danger{border-color:#633333;background:#1b1010;color:#ff9c9c}
+    .segment-card.auto-hidden .segment-config,.segment-card.auto-hidden .segment-actions{display:none}
+    .segment-card.auto-hidden{padding-top:10px}
+    .segment-card{margin-top:10px;padding:12px;border:1px solid #252536;border-radius:14px;background:rgba(255,255,255,.025)}
+    .segment-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px}
+    .segment-title{font-size:14px;font-weight:800;letter-spacing:1px;color:#e8e8f5}
+    .segment-state{font-size:9px;letter-spacing:1px;color:#666680}
+    .segment-config{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .segment-field label{display:block;font-size:9px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.8px}
+    .segment-field input{width:100%;padding:9px 8px;border:1px solid #2b2b40;border-radius:9px;background:#0c0c13;color:#fff;font:600 15px 'Share Tech Mono',monospace}
+    .segment-actions{display:flex;gap:7px;margin-top:9px}
+    .segment-btn{flex:1;border:1px solid #30404a;border-radius:9px;padding:9px 8px;background:#111a17;color:#00ff88;font-weight:800;font-size:11px}
+    .segment-btn.stop{color:#ff6b6b;border-color:#4a2929;background:#1a1010}
+    .segment-live{display:none;margin-top:10px}
+    .segment-live.active{display:block}
+    .segment-progress-track{height:12px;background:#161621;border-radius:999px;overflow:hidden;border:1px solid #28283a}
+    .segment-progress-fill{height:100%;width:0%;background:linear-gradient(90deg,#00ff88,#ffe500);box-shadow:0 0 12px #00ff8866;transition:width .25s linear}
+    .segment-progress-meta{display:flex;justify-content:space-between;margin-top:5px;font:10px 'Share Tech Mono',monospace;color:#77778d}
+    .segment-metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}
+    .segment-metric{padding:9px;border-radius:10px;background:#0c0c13;border:1px solid #202033;text-align:center}
+    .segment-metric-label{font-size:9px;color:#666680;letter-spacing:.7px}
+    .segment-metric-value{font:700 25px 'Share Tech Mono',monospace;margin-top:2px;color:#f0f0ff}
+    .segment-warning{margin-top:8px;font-size:10px;text-align:center;font-weight:800;letter-spacing:.7px;min-height:14px}
+    @media(max-width:600px){body.driving-mode .segment-card{margin-top:8px}.segment-metric-value{font-size:28px}}
+
     /* ── FLOATING WINDOW ─────────────────────── */
     #floatWindow {
       position: fixed;
@@ -504,7 +533,7 @@
   <div id="titleBar">
     <div class="tb-left">
       <div class="tb-dot" id="statusDot"></div>
-      <span class="tb-title">SPEEDGUARD <span class="app-version">V7</span></span>
+      <span class="tb-title">SPEEDGUARD <span class="app-version">V10</span></span>
     </div>
     <div class="tb-actions">
       <button class="tb-btn" id="minimizeBtn" title="Minimizar">_</button>
@@ -583,6 +612,32 @@
       <!-- Sanción card -->
       <div id="sancionCard" class="sancion-card" style="margin-top:8px;"></div>
 
+      <!-- Radar de tram -->
+      <div class="segment-card" id="segmentCard">
+        <div id="autoRadarAlert" class="auto-radar-alert" aria-live="polite" style="display:none"></div>
+        <div class="segment-head">
+          <div class="segment-title">📡 RADAR DE TRAM</div>
+          <div class="segment-state" id="segmentState">ATURAT</div>
+        </div>
+        <div class="segment-config">
+          <div class="segment-field"><label>Distància del tram</label><input id="segmentDistance" type="number" min="0.1" max="500" step="0.1" value="5.0"> </div>
+          <div class="segment-field"><label>Límit mitjà</label><input id="segmentLimit" type="number" min="1" max="200" step="1" value="120"></div>
+        </div>
+        <div class="segment-actions">
+          <button type="button" class="segment-btn" id="segmentStartBtn" onclick="startSegmentRadar()">▶ INICIAR TRAM</button>
+          <button type="button" class="segment-btn stop" id="segmentStopBtn" onclick="stopSegmentRadar()" style="display:none">■ FINALITZAR</button>
+        </div>
+        <div class="segment-live" id="segmentLive">
+          <div class="segment-progress-track"><div class="segment-progress-fill" id="segmentProgressFill"></div></div>
+          <div class="segment-progress-meta"><span id="segmentDistanceDone">0,00 km</span><span id="segmentDistanceLeft">5,00 km</span></div>
+          <div class="segment-metrics">
+            <div class="segment-metric"><div class="segment-metric-label">VELOCITAT ACTUAL</div><div class="segment-metric-value" id="segmentCurrentSpeed">0</div></div>
+            <div class="segment-metric"><div class="segment-metric-label">VELOCITAT MITJANA</div><div class="segment-metric-value" id="segmentAverageSpeed">0,0</div></div>
+          </div>
+          <div class="segment-warning" id="segmentWarning"></div>
+        </div>
+      </div>
+
     </div><!-- /speedScreen -->
 
     <!-- ── EDITOR SCREEN ── -->
@@ -605,6 +660,17 @@
         <div class="halo-setting"><div class="halo-setting-head"><strong>Velocitat del moviment</strong><span id="haloSpeedValue">1×</span></div><input class="halo-range" id="haloSpeedRange" type="range" min="0" max="200" step="10"></div>
         <div class="halo-preset-row"><button class="via-btn" onclick="setHaloPreset('discret')">Discret</button><button class="via-btn" onclick="setHaloPreset('normal')">Normal</button><button class="via-btn" onclick="setHaloPreset('intens')">Intens</button></div>
         <button class="reset-btn" style="margin-top:7px" onclick="resetHaloSettings()">↺ Restaurar il·luminació</button>
+      </div>
+
+      <div class="halo-settings">
+        <div class="section-title">🎯 CALIBRATGE DE VELOCITAT</div>
+        <div style="font-size:10px;color:var(--muted);line-height:1.4;margin-bottom:9px;">Ajusta la velocitat que mostra SpeedGuard perquè coincideixi amb la velocitat real del vehicle.</div>
+        <div class="halo-setting"><div class="halo-setting-head"><strong>Correcció fixa</strong><span id="speedCorrectionValue">+0 km/h</span></div><input class="halo-range" id="speedCorrectionRange" type="range" min="-20" max="20" step="0.5" value="0"></div>
+        <div class="halo-setting"><div class="halo-setting-head"><strong>Correcció percentual</strong><span id="speedCorrectionPctValue">0%</span></div><input class="halo-range" id="speedCorrectionPctRange" type="range" min="-15" max="15" step="0.5" value="0"></div>
+        <div class="halo-setting" style="margin-top:12px;padding:9px;border-radius:10px;background:#0c0c13;border:1px solid #202033;">
+          <div class="halo-setting-head"><strong>Exemple en temps real</strong><span id="speedCalibrationPreview">GPS 0 → 0 km/h</span></div>
+        </div>
+        <button class="reset-btn" style="margin-top:7px" onclick="resetSpeedCalibration()">↺ Restaurar calibratge</button>
       </div>
 
       <div style="margin-top:12px;">
@@ -703,10 +769,17 @@ const TIPOS_VIA = [
 let sanciones    = loadSanciones();
 let currentVia   = TIPOS_VIA[1];     // default urbana
 let currentSpeed = 0;
+let rawGpsSpeed = 0;
 let inputMode    = 'gps';            // 'gps' | 'manual'
 let gpsWatchId   = null;
 let lastLat      = null, lastLon = null;
 let osmQuerying  = false;
+
+// Radar de tram state
+let segmentRadar = { active:false, totalKm:5, limitKmh:120, distanceKm:0, startTime:0, lastLat:null, lastLon:null, completed:false };
+let radarDetection = { fixed:[], average:[], alerted:new Set(), lastQueryLat:null, lastQueryLon:null, lastAlertAt:0, activeAverageId:null };
+let radarQuerying = false;
+let lastRadarQueryAt = 0;
 
 // ══════════════════════════════════════════════════════════════════
 //  PERSISTENCE
@@ -788,8 +861,42 @@ function setManualSpeed(val) {
   document.getElementById('manualSlider').value = val;
   document.getElementById('manualVal').textContent = val + ' km/h';
   currentSpeed = val;
+  rawGpsSpeed = val;
+  updateSpeedCalibrationControls();
   update();
 }
+
+// ══════════════════════════════════════════════════════════════════
+//  SPEED CALIBRATION
+// ══════════════════════════════════════════════════════════════════
+const DEFAULT_SPEED_CALIBRATION = { fixed: 0, percent: 0 };
+let speedCalibration = (() => {
+  try { return {...DEFAULT_SPEED_CALIBRATION, ...(JSON.parse(localStorage.getItem('sg_speed_calibration') || '{}'))}; }
+  catch { return {...DEFAULT_SPEED_CALIBRATION}; }
+})();
+function applySpeedCalibration(raw) {
+  const base = Number.isFinite(raw) ? raw : 0;
+  return Math.max(0, base * (1 + speedCalibration.percent / 100) + speedCalibration.fixed);
+}
+function formatSigned(v, unit='') {
+  const n = Number(v);
+  return (n > 0 ? '+' : '') + n.toFixed(1).replace('.0','') + unit;
+}
+function updateSpeedCalibrationControls() {
+  const a=document.getElementById('speedCorrectionRange'), b=document.getElementById('speedCorrectionPctRange');
+  if(a){a.value=speedCalibration.fixed; document.getElementById('speedCorrectionValue').textContent=formatSigned(speedCalibration.fixed,' km/h');}
+  if(b){b.value=speedCalibration.percent; document.getElementById('speedCorrectionPctValue').textContent=formatSigned(speedCalibration.percent,'%');}
+  const preview=document.getElementById('speedCalibrationPreview');
+  if(preview) preview.textContent=`GPS ${Math.round(rawGpsSpeed)} → ${Math.round(applySpeedCalibration(rawGpsSpeed))} km/h`;
+}
+function saveSpeedCalibration(){ localStorage.setItem('sg_speed_calibration',JSON.stringify(speedCalibration)); }
+function bindSpeedCalibrationControls(){
+  const a=document.getElementById('speedCorrectionRange'), b=document.getElementById('speedCorrectionPctRange');
+  if(a)a.addEventListener('input',()=>{speedCalibration.fixed=Number(a.value);saveSpeedCalibration();updateSpeedCalibrationControls();if(inputMode==='gps'){currentSpeed=applySpeedCalibration(rawGpsSpeed);update();}});
+  if(b)b.addEventListener('input',()=>{speedCalibration.percent=Number(b.value);saveSpeedCalibration();updateSpeedCalibrationControls();if(inputMode==='gps'){currentSpeed=applySpeedCalibration(rawGpsSpeed);update();}});
+  updateSpeedCalibrationControls();
+}
+function resetSpeedCalibration(){ speedCalibration={...DEFAULT_SPEED_CALIBRATION}; saveSpeedCalibration(); updateSpeedCalibrationControls(); if(inputMode==='gps'){currentSpeed=applySpeedCalibration(rawGpsSpeed);update();} }
 
 // ══════════════════════════════════════════════════════════════════
 //  GPS
@@ -803,9 +910,10 @@ function startGPS() {
   gpsWatchId = navigator.geolocation.watchPosition(
     pos => {
       const spd = pos.coords.speed != null ? pos.coords.speed * 3.6 : null;
-      currentSpeed = spd != null ? Math.round(spd) : currentSpeed;
+      if (spd != null && Number.isFinite(spd)) { rawGpsSpeed = spd; currentSpeed = applySpeedCalibration(spd); }
       lastLat = pos.coords.latitude;
       lastLon = pos.coords.longitude;
+      updateSegmentRadarPosition(lastLat, lastLon);
       const acc = Math.round(pos.coords.accuracy);
       setGPSStatus('ok', `GPS ±${acc}m`);
       document.getElementById('gpsCoords').textContent =
@@ -813,6 +921,7 @@ function startGPS() {
       update();
       // Auto-query OSM every ~200m (rough)
       if (!osmQuerying) queryOSMLimit();
+      if (!radarQuerying && (Date.now() - lastRadarQueryAt > 15000)) detectRadars();
     },
     err => {
       const msgs = { 1:'Permiso denegado', 2:'Posición no disponible', 3:'Tiempo agotado' };
@@ -883,6 +992,90 @@ async function queryOSMLimit() {
   }
 }
 
+function speakRadar(text) {
+  try {
+    if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'ca-ES'; u.rate = 1.05; u.volume = 0.9;
+    window.speechSynthesis.speak(u);
+  } catch {}
+}
+
+function showRadarAlert(text, type='fixed') {
+  const el=document.getElementById('autoRadarAlert');
+  if(!el) return;
+  el.style.display='block'; el.className='auto-radar-alert '+type; el.textContent=text;
+}
+
+function distanceToRadar(r) {
+  return haversineKm(lastLat,lastLon,r.lat,r.lon);
+}
+
+async function detectRadars() {
+  if (lastLat===null || lastLon===null || radarQuerying) return;
+  radarQuerying=true; lastRadarQueryAt=Date.now();
+  const query=`[out:json][timeout:8];(node(around:3000,${lastLat},${lastLon})[highway=speed_camera];rel(around:3000,${lastLat},${lastLon})[type=enforcement][enforcement=average_speed];);out body;>;out body;`;
+  try {
+    const res=await fetch('https://overpass-api.de/api/interpreter?data='+encodeURIComponent(query),{signal:AbortSignal.timeout(9000)});
+    const data=await res.json();
+    const nodes=new Map(), ways=new Map(), rels=[];
+    for(const e of (data.elements||[])){
+      if(e.type==='node' && e.lat!=null) nodes.set(e.id,e);
+      else if(e.type==='way') ways.set(e.id,e);
+      else if(e.type==='relation') rels.push(e);
+    }
+    radarDetection.fixed=(data.elements||[]).filter(e=>e.type==='node' && e.tags?.highway==='speed_camera').map(e=>({id:'f'+e.id,lat:e.lat,lon:e.lon,limit:parseMaxspeed(e.tags?.maxspeed)||currentVia.limite,type:'fixed'}));
+    radarDetection.average=[];
+    for(const rel of rels){
+      let from=null,to=null, sectionNodes=[];
+      for(const m of (rel.members||[])){
+        if(m.type==='node' && nodes.has(m.ref)){ if(m.role==='from') from=nodes.get(m.ref); if(m.role==='to') to=nodes.get(m.ref); }
+        if(m.role==='section' && m.type==='way' && ways.has(m.ref)){
+          const wn=ways.get(m.ref).nodes||[]; if(wn.length) sectionNodes.push(nodes.get(wn[0]),nodes.get(wn[wn.length-1]));
+        }
+      }
+      if(!from && sectionNodes.length) from=sectionNodes.find(Boolean);
+      if(!to && sectionNodes.length) to=[...sectionNodes].reverse().find(Boolean);
+      if(!from || !to) continue;
+      const limit=parseMaxspeed(rel.tags?.maxspeed || rel.tags?.['maxspeed:enforcement']) || currentVia.limite;
+      const total=haversineKm(from.lat,from.lon,to.lat,to.lon);
+      if(total<0.1) continue;
+      radarDetection.average.push({id:'a'+rel.id,lat:from.lat,lon:from.lon,toLat:to.lat,toLon:to.lon,totalKm:total,limit,type:'average'});
+    }
+    checkRadarProximity();
+  } catch(e) { /* Radar data unavailable: keep previous detection */ }
+  finally { radarQuerying=false; }
+}
+
+function checkRadarProximity(){
+  if(lastLat===null || lastLon===null) return;
+  const now=Date.now();
+  const av=radarDetection.average.map(r=>({...r,d:distanceToRadar(r)})).filter(r=>r.d<1.5).sort((a,b)=>a.d-b.d)[0];
+  if(av){
+    if(!segmentRadar.active && av.d<0.18){
+      segmentRadar={active:true,auto:true,id:av.id,totalKm:av.totalKm,limitKmh:av.limit,distanceKm:0,startTime:performance.now(),lastLat,lastLon,completed:false};
+      document.getElementById('segmentCard')?.classList.add('auto-hidden');
+      document.getElementById('segmentState').textContent='EN CURS · AUTO';
+      document.getElementById('segmentLive').classList.add('active');
+      showRadarAlert(`📡 RADAR DE TRAM DETECTAT · ${av.limit} km/h · ${av.totalKm.toFixed(1).replace('.',',')} km`,'average');
+      speakRadar(`Radar de tram detectat. Límit ${av.limit} quilòmetres per hora.`);
+    } else if(!segmentRadar.active && av.d<0.8 && now-radarDetection.lastAlertAt>30000){
+      radarDetection.lastAlertAt=now;
+      showRadarAlert(`⚠ Radar de tram a ${(av.d*1000).toFixed(0)} m · límit ${av.limit} km/h`,'average');
+      speakRadar(`Atenció. Radar de tram a ${Math.round(av.d*1000)} metres.`);
+    }
+    radarDetection.activeAverageId=av.id;
+    return;
+  }
+  const fx=radarDetection.fixed.map(r=>({...r,d:distanceToRadar(r)})).filter(r=>r.d<1.0).sort((a,b)=>a.d-b.d)[0];
+  if(fx && now-radarDetection.lastAlertAt>30000){
+    radarDetection.lastAlertAt=now;
+    showRadarAlert(`⚠ RADAR FIX A ${(fx.d*1000).toFixed(0)} m · límit ${fx.limit} km/h`,'fixed');
+    speakRadar(`Atenció. Radar fix a ${Math.round(fx.d*1000)} metres.`);
+  }
+}
+
 function parseMaxspeed(val) {
   if (!val) return null;
   const n = parseInt(val);
@@ -893,6 +1086,99 @@ function parseMaxspeed(val) {
 }
 
 // ══════════════════════════════════════════════════════════════════
+//  RADAR DE TRAM — velocitat mitjana per distància/temps
+// ══════════════════════════════════════════════════════════════════
+function haversineKm(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2-lat1) * Math.PI/180;
+  const dLon = (lon2-lon1) * Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function startSegmentRadar() {
+  const total = parseFloat(document.getElementById('segmentDistance').value);
+  const limit = parseFloat(document.getElementById('segmentLimit').value);
+  if (!Number.isFinite(total) || total <= 0 || !Number.isFinite(limit) || limit <= 0) {
+    showToast('⚠ Introdueix distància i límit vàlids');
+    return;
+  }
+  if (inputMode !== 'gps' || lastLat === null || lastLon === null) {
+    showToast('⚠ Cal tenir GPS actiu abans d’iniciar');
+    return;
+  }
+  segmentRadar = {active:true,totalKm:total,limitKmh:limit,distanceKm:0,startTime:performance.now(),lastLat,lastLon,completed:false};
+  document.getElementById('segmentDistance').disabled = true;
+  document.getElementById('segmentLimit').disabled = true;
+  document.getElementById('segmentStartBtn').style.display = 'none';
+  document.getElementById('segmentStopBtn').style.display = 'block';
+  document.getElementById('segmentLive').classList.add('active');
+  document.getElementById('segmentState').textContent = 'EN CURS';
+  updateSegmentRadarUI();
+  showToast('📡 Radar de tram iniciat');
+}
+
+function stopSegmentRadar() {
+  if (!segmentRadar.active) return;
+  const wasAuto = !!segmentRadar.auto;
+  segmentRadar.active = false;
+  document.getElementById('segmentDistance').disabled = false;
+  document.getElementById('segmentLimit').disabled = false;
+  document.getElementById('segmentStartBtn').style.display = 'block';
+  document.getElementById('segmentStopBtn').style.display = 'none';
+  document.getElementById('segmentState').textContent = wasAuto ? 'FINALITZAT' : 'FINALITZAT';
+  document.getElementById('segmentCard')?.classList.remove('auto-hidden');
+  updateSegmentRadarUI();
+}
+
+function updateSegmentRadarPosition(lat, lon) {
+  if (!segmentRadar.active || segmentRadar.lastLat === null) return;
+  const d = haversineKm(segmentRadar.lastLat, segmentRadar.lastLon, lat, lon);
+  // Ignore GPS jitter and implausible jumps.
+  if (d >= 0.003 && d <= 0.15) segmentRadar.distanceKm = Math.min(segmentRadar.totalKm, segmentRadar.distanceKm + d);
+  segmentRadar.lastLat = lat;
+  segmentRadar.lastLon = lon;
+  updateSegmentRadarUI();
+  checkRadarProximity();
+  if (segmentRadar.distanceKm >= segmentRadar.totalKm) {
+    const wasAuto = !!segmentRadar.auto;
+    segmentRadar.completed = true;
+    stopSegmentRadar();
+    document.getElementById('segmentState').textContent = 'TRAM COMPLETAT';
+    showRadarAlert('✓ RADAR DE TRAM COMPLETAT · velocitat mitjana calculada','average');
+    if(wasAuto) speakRadar('Radar de tram completat.');
+    showToast('✓ Radar de tram completat');
+  }
+}
+
+function updateSegmentRadarUI() {
+  const live = document.getElementById('segmentLive');
+  if (!live) return;
+  const done = segmentRadar.distanceKm;
+  const total = segmentRadar.totalKm || 1;
+  const pct = Math.min(100, done / total * 100);
+  const elapsedHours = segmentRadar.startTime ? (performance.now() - segmentRadar.startTime) / 3600000 : 0;
+  const avg = elapsedHours > 0 && done > 0 ? done / elapsedHours : 0;
+  const left = Math.max(0, total - done);
+  const current = Math.max(0, Math.round(currentSpeed));
+  const margin = segmentRadar.limitKmh - avg;
+  const fill = document.getElementById('segmentProgressFill');
+  fill.style.width = pct.toFixed(1) + '%';
+  fill.style.background = margin < 0 ? 'linear-gradient(90deg,#ff9500,#ff3b30)' : margin < 5 ? 'linear-gradient(90deg,#ffe500,#ff9500)' : 'linear-gradient(90deg,#00ff88,#00c8ff)';
+  document.getElementById('segmentDistanceDone').textContent = done.toFixed(2).replace('.',',') + ' km';
+  document.getElementById('segmentDistanceLeft').textContent = left.toFixed(2).replace('.',',') + ' km restants';
+  document.getElementById('segmentCurrentSpeed').textContent = current;
+  const avgEl = document.getElementById('segmentAverageSpeed');
+  avgEl.textContent = avg.toFixed(1).replace('.',',');
+  avgEl.style.color = margin < 0 ? '#ff3b30' : margin < 5 ? '#ffe500' : '#00ff88';
+  const warning = document.getElementById('segmentWarning');
+  if (!segmentRadar.active && !segmentRadar.completed) warning.textContent = '';
+  else if (margin < 0) warning.textContent = '⚠ MITJANA PER SOBRE DEL LÍMIT';
+  else if (margin < 5) warning.textContent = `⚠ NOMÉS ${margin.toFixed(1).replace('.',',')} km/h DE MARGE MITJÀ`;
+  else warning.textContent = `✓ MARGE MITJÀ: ${margin.toFixed(1).replace('.',',')} km/h`;
+}
+
+// ══════════════════════════════════════════════════════════════════
 //  CORE UPDATE
 // ══════════════════════════════════════════════════════════════════
 function getSancion(exceso) {
@@ -900,13 +1186,15 @@ function getSancion(exceso) {
 }
 
 function update() {
+  updateSpeedCalibrationControls();
   const spd    = Math.max(0, Math.round(currentSpeed));
   const dst = document.getElementById('driveStatusText');
   if (dst) dst.textContent = (inputMode === 'gps' ? (lastLat !== null ? 'GPS ACTIVO' : 'ESPERANDO GPS') : 'MANUAL');
   const limite = currentVia.limite;
   const exceso = spd - limite;
   const s      = getSancion(exceso);
-  const multa  = s.descuento ? s.multa * 0.5 : s.multa;  // shown as pronto pago when available
+  const multa  = s.descuento ? s.multa * 0.5 : s.multa;
+  if (segmentRadar.active) updateSegmentRadarUI();  // shown as pronto pago when available
   const pct    = Math.min(100, (spd / (limite * 2)) * 100);
 
   // Speed value
@@ -1177,6 +1465,7 @@ applyHaloSettings();
 // ══════════════════════════════════════════════════════════════════
 renderViaGrid();
 bindHaloControls();
+bindSpeedCalibrationControls();
 applyDrivingMode();
 update();
 startGPS();
