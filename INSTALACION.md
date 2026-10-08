@@ -96,7 +96,3 @@ Para que SpeedGuard se superponga a Google Maps / Waze:
 ---
 
 *SpeedGuard v1.0 · Solo uso informativo · RDL 6/2015 + Ley 18/2021*
-
-
-## V19 – Trànsit
-Activa “Retencions” a ⚙ EDITAR. Les alertes poden ser visuals, de veu o ambdues.

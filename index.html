@@ -110,14 +110,6 @@
     .auto-radar-alert.fixed{border-color:#3b4630;background:#12170e;color:#dfff9b}
     .auto-radar-alert.average{border-color:#394a63;background:#0d131b;color:#9ed5ff}
     .auto-radar-alert.danger{border-color:#633333;background:#1b1010;color:#ff9c9c}
-    .traffic-alert{display:none;margin:-2px 0 10px;padding:12px;border-radius:12px;border:2px solid #ff9500;background:linear-gradient(135deg,#2a1707,#17100a);color:#fff;font-weight:900;text-align:center;box-shadow:0 0 24px rgba(255,149,0,.25);animation:trafficPulse 1.1s ease-in-out infinite}
-    .traffic-alert.show{display:block}.traffic-alert.severe{border-color:#ff3b30;background:linear-gradient(135deg,#2a0907,#180909);box-shadow:0 0 30px rgba(255,59,48,.35)}
-    .traffic-alert .ta-title{font-size:16px;letter-spacing:1px}.traffic-alert .ta-detail{font-size:11px;margin-top:4px;color:#ffd8b0}.traffic-alert .ta-source{font-size:8px;margin-top:5px;color:#aaa}
-    #drivingRadarHUD.traffic{border-color:#ff9500;box-shadow:0 0 28px rgba(255,149,0,.28)}
-    #drivingRadarHUD.traffic-severe{border-color:#ff3b30;box-shadow:0 0 34px rgba(255,59,48,.34);animation:trafficHudPulse .9s ease-in-out infinite}
-    @keyframes trafficPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.015);opacity:.8}}
-    @keyframes trafficHudPulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.25)}}
-
     .segment-card.auto-hidden .segment-config,.segment-card.auto-hidden .segment-actions{display:none}
     .segment-card.auto-hidden{padding-top:10px}
     .segment-card{margin-top:10px;padding:12px;border:1px solid #252536;border-radius:14px;background:rgba(255,255,255,.025)}
@@ -412,33 +404,33 @@
 
     /* ── RADAR COMPASS / NEAREST RADAR HUD ─────────────── */
     #drhCompassWrap{display:flex;align-items:center;gap:10px;padding:7px 9px;border-bottom:1px solid rgba(255,255,255,.06);background:linear-gradient(180deg,rgba(0,255,136,.055),rgba(0,0,0,.08));}
-    .drh-compass-dial{position:relative;width:58px;height:58px;min-width:58px;border:1px solid rgba(0,255,136,.38);border-radius:50%;background:radial-gradient(circle,#111a19 0 52%,#07100f 53% 100%);box-shadow:inset 0 0 12px rgba(0,255,136,.08);overflow:hidden;}
+    .drh-compass-dial{position:relative;width:82px;height:82px;min-width:82px;border:1px solid rgba(0,255,136,.38);border-radius:50%;background:radial-gradient(circle,#111a19 0 52%,#07100f 53% 100%);box-shadow:inset 0 0 12px rgba(0,255,136,.08);overflow:hidden;}
     .drh-compass-dial::before{content:"";position:absolute;inset:7px;border:1px dashed rgba(255,255,255,.13);border-radius:50%;}
-    .drh-dir{position:absolute;font:800 8px 'Share Tech Mono',monospace;color:#69777a;z-index:2;}
-    .drh-dir.n{top:3px;left:50%;transform:translateX(-50%);color:#00ff88}.drh-dir.e{right:5px;top:50%;transform:translateY(-50%)}.drh-dir.s{bottom:3px;left:50%;transform:translateX(-50%)}.drh-dir.w{left:5px;top:50%;transform:translateY(-50%)}
+    .drh-dir{position:absolute;font:900 12px 'Share Tech Mono',monospace;color:#69777a;z-index:2;}
+    .drh-dir.n{top:5px;left:50%;transform:translateX(-50%);color:#00ff88}.drh-dir.e{right:7px;top:50%;transform:translateY(-50%)}.drh-dir.s{bottom:5px;left:50%;transform:translateX(-50%)}.drh-dir.w{left:7px;top:50%;transform:translateY(-50%)}
     .drh-tick{position:absolute;width:1px;height:5px;background:#556365;left:50%;top:4px;transform-origin:50% 25px;}.drh-tick.t90{transform:rotate(90deg)}.drh-tick.t180{transform:rotate(180deg)}.drh-tick.t270{transform:rotate(270deg)}
-    .drh-heading{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font:700 7px 'Share Tech Mono',monospace;color:#a9b3b5;z-index:3;}
-    .drh-arrow{position:absolute;left:50%;top:50%;transform:translate(-50%,-53%);font-size:23px;line-height:1;color:#00ff88;text-shadow:0 0 10px rgba(0,255,136,.65);z-index:4;transition:transform .18s ease,color .18s ease;}
+    .drh-heading{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font:800 10px 'Share Tech Mono',monospace;color:#a9b3b5;z-index:3;}
+    .drh-arrow{position:absolute;left:50%;top:50%;transform:translate(-50%,-53%);font-size:38px;line-height:1;color:#00ff88;text-shadow:0 0 10px rgba(0,255,136,.65);z-index:4;transition:transform .18s ease,color .18s ease;}
     .drh-radar-info{min-width:0;flex:1;display:grid;grid-template-columns:1fr auto;align-items:center;column-gap:8px;row-gap:2px;}
-    .drh-radar-type{font:800 10px/1.1 'Rajdhani',sans-serif;letter-spacing:1px;color:#eafcff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.drh-radar-distance{font:800 15px 'Share Tech Mono',monospace;color:#00ff88;white-space:nowrap}.drh-radar-limit{grid-column:1/-1;font:700 10px 'Share Tech Mono',monospace;color:#9ed5ff}.drh-radar-info.empty{opacity:.62}
+    .drh-radar-type{font:900 15px/1.1 'Rajdhani',sans-serif;letter-spacing:1px;color:#eafcff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.drh-radar-distance{font:900 24px 'Share Tech Mono',monospace;color:#00ff88;white-space:nowrap}.drh-radar-limit{grid-column:1/-1;font:800 14px 'Share Tech Mono',monospace;color:#9ed5ff}.drh-radar-info.empty{opacity:.62}
     .drh-compass-dial.no-heading .drh-arrow{opacity:.28}.drh-compass-dial.no-heading .drh-heading{color:#69777a}
 
     /* ── DRIVING RADAR HUD: zero-touch while driving ─────── */
     #drivingRadarHUD{display:none;position:relative;z-index:1200;margin:0 10px 6px;border:1px solid rgba(0,255,136,.28);border-radius:12px;background:rgba(5,12,12,.94);box-shadow:0 0 22px rgba(0,255,136,.08);overflow:hidden;pointer-events:none}
     #drivingRadarHUD.visible{display:block}
-    #drivingRadarHUD .drh-alert{padding:8px 10px;font:800 12px/1.25 'Rajdhani',sans-serif;letter-spacing:1px;color:#9ed5ff;border-bottom:1px solid rgba(255,255,255,.06)}
+    #drivingRadarHUD .drh-alert{padding:10px 12px;font:900 17px/1.25 'Rajdhani',sans-serif;letter-spacing:1px;color:#9ed5ff;border-bottom:1px solid rgba(255,255,255,.06)}
     #drivingRadarHUD.fixed .drh-alert{color:#dfff9b}
     #drivingRadarHUD.danger .drh-alert{color:#ff8f8f}
     #drivingRadarHUD .drh-live{padding:8px 10px 9px}
-    #drivingRadarHUD .drh-head{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:9px;color:#77778d;letter-spacing:1px;margin-bottom:6px}
-    #drivingRadarHUD .drh-title{color:#eafcff;font-size:11px;font-weight:800}
+    #drivingRadarHUD .drh-head{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;color:#77778d;letter-spacing:1px;margin-bottom:6px}
+    #drivingRadarHUD .drh-title{color:#eafcff;font-size:14px;font-weight:800}
     #drivingRadarHUD .drh-track{height:9px;border-radius:999px;background:#171722;border:1px solid #28283a;overflow:hidden}
     #drivingRadarHUD .drh-fill{height:100%;width:0;background:linear-gradient(90deg,#00ff88,#00c8ff);transition:width .25s linear}
     #drivingRadarHUD .drh-meta{display:flex;justify-content:space-between;margin-top:4px;font:9px 'Share Tech Mono',monospace;color:#77778d}
     #drivingRadarHUD .drh-metrics{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:7px}
     #drivingRadarHUD .drh-metric{display:flex;align-items:baseline;justify-content:center;gap:5px;padding:4px 5px;border-radius:8px;background:#0b0b12;border:1px solid #202033}
-    #drivingRadarHUD .drh-label{font-size:8px;color:#666680;letter-spacing:.5px}
-    #drivingRadarHUD .drh-value{font:700 21px 'Share Tech Mono',monospace;color:#00ff88}
+    #drivingRadarHUD .drh-label{font-size:11px;color:#666680;letter-spacing:.5px}
+    #drivingRadarHUD .drh-value{font:800 27px 'Share Tech Mono',monospace;color:#00ff88}
     #drivingRadarHUD .drh-warning{text-align:center;font-size:9px;font-weight:800;letter-spacing:.5px;margin-top:5px;min-height:11px}
     body.driving-mode #driveModeBtn,body.driving-mode #driveStatus{display:none}
     #exitDriveBtn{display:none;position:fixed;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:2147483646;width:auto;max-width:190px;min-height:34px;padding:7px 11px;border-radius:9px;border:1px solid rgba(255,255,255,.24);background:rgba(5,12,12,.88);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:#eafcff;font:800 10px 'Rajdhani',sans-serif;letter-spacing:1px;box-shadow:0 4px 18px rgba(0,0,0,.35);pointer-events:auto;touch-action:manipulation}
@@ -465,10 +457,10 @@
       #drivingRadarHUD .drh-live{padding:7px 9px 8px}
       #drivingRadarHUD .drh-value{font-size:20px}
       #drhCompassWrap{padding:6px 8px;gap:8px}
-      .drh-compass-dial{width:52px;height:52px;min-width:52px}
-      .drh-arrow{font-size:21px}
-      .drh-radar-distance{font-size:14px}
-      .drh-radar-type{font-size:9px}
+      .drh-compass-dial{width:76px;height:76px;min-width:76px}
+      .drh-arrow{font-size:34px}
+      .drh-radar-distance{font-size:21px}
+      .drh-radar-type{font-size:13px}
     }
 
     /* ── MOBILE / PHONE LAYOUT ───────────────────────────── */
@@ -717,7 +709,6 @@
       <!-- Radar de tram -->
       <div class="segment-card" id="segmentCard">
         <div id="autoRadarAlert" class="auto-radar-alert" aria-live="polite" style="display:none"></div>
-        <div id="trafficAlert" class="traffic-alert" aria-live="assertive"><div class="ta-title" id="trafficAlertTitle">🟠 RETENCIÓ</div><div class="ta-detail" id="trafficAlertDetail"></div><div class="ta-source" id="trafficAlertSource"></div></div>
         <div class="segment-head">
           <div class="segment-title">📡 RADAR DE TRAM</div>
           <div class="segment-state" id="segmentState">ATURAT</div>
@@ -787,8 +778,6 @@
           <label class="alert-toggle"><input type="checkbox" id="alertVisual"><span>👁 Alerta visual</span></label>
         </div>
         <div class="halo-setting" style="margin-top:10px"><div class="halo-setting-head"><strong>Avís abans del radar</strong><span id="alertDistanceValue">1 km</span></div><input class="halo-range" id="alertDistanceRange" type="range" min="300" max="2000" step="100" value="1000"></div>
-        <div class="halo-setting" style="margin-top:10px"><div class="halo-setting-head"><strong>Avís de retencions</strong><span id="trafficDistanceValue">2 km</span></div><input class="halo-range" id="trafficDistanceRange" type="range" min="500" max="5000" step="250" value="2000"></div>
-        <div class="alert-simple-grid"><label class="alert-toggle"><input type="checkbox" id="alertTraffic"><span>🟠 Retencions</span></label><label class="alert-toggle"><input type="checkbox" id="trafficRepeat"><span>🔁 Repetir si empitjora</span></label></div>
         <div class="alert-source-note">Els radars mòbils exactes no tenen una base pública oficial amb coordenades. L’SCT publica <strong>trams oficials de vigilància mòbil</strong>. SpeedGuard els mostra com a zona de vigilància, no com a radar confirmat.</div>
         <div class="halo-preset-row"><button class="via-btn" type="button" onclick="testRadarAlert()">🔔 Provar alerta</button><button class="reset-btn" type="button" onclick="resetAlertSettings()">↺ Restaurar</button></div>
       </div>
@@ -901,21 +890,18 @@ let osmQuerying  = false;
 
 // Radar de tram state
 let segmentRadar = { active:false, totalKm:5, limitKmh:120, distanceKm:0, startTime:0, lastLat:null, lastLon:null, completed:false };
-let radarDetection = { fixed:[], average:[], alerted:new Set(), lastQueryLat:null, lastQueryLon:null, lastAlertAt:0, activeAverageId:null };
+let radarDetection = { fixed:[], average:[], alerted:new Set(), lastQueryLat:null, lastQueryLon:null, lastAlertAt:0, activeAverageId:null, completedAverage:new Map() };
+let lastOSMQueryAt = 0;
+const OSM_QUERY_INTERVAL_MS = 2500;
+const RADAR_COMPLETION_COOLDOWN_MS = 90000;
 let radarQuerying = false;
 let lastRadarQueryAt = 0;
 
 // Alert configuration — simple, persistent and testable
-const DEFAULT_ALERT_SETTINGS = { fixed:true, average:true, mobileZones:true, voice:true, visual:true, traffic:true, trafficRepeat:true, distanceM:1000, trafficDistanceM:2000, language:'ca' };
+const DEFAULT_ALERT_SETTINGS = { fixed:true, average:true, mobileZones:true, voice:true, visual:true, distanceM:1000, language:'ca' };
 let currentRoadRef = '';
 let currentRoadName = '';
 let lastMobileAlertAt = 0;
-let trafficIncidents = [];
-let trafficQuerying = false;
-let lastTrafficQueryAt = 0;
-let lastTrafficAlertAt = 0;
-let activeTrafficId = null;
-let lastTrafficSeverity = 0;
 
 // Trams oficials de vigilància mòbil publicats per l'SCT (via + PK).
 // No representen la presència d'un radar en temps real.
@@ -1205,9 +1191,9 @@ function startGPS() {
       if (spd != null && Number.isFinite(spd)) { rawGpsSpeed = spd; currentSpeed = applySpeedCalibration(spd); }
       if (Number.isFinite(pos.coords.heading) && pos.coords.heading >= 0) currentHeading = pos.coords.heading;
       lastGpsTimestamp = pos.timestamp || Date.now();
-      updateNearestRadarHUD();
       lastLat = pos.coords.latitude;
       lastLon = pos.coords.longitude;
+      updateNearestRadarHUD();
       updateSegmentRadarPosition(lastLat, lastLon);
       const acc = Math.round(pos.coords.accuracy);
       setGPSStatus('ok', `GPS ±${acc}m`);
@@ -1215,9 +1201,8 @@ function startGPS() {
         lastLat.toFixed(4) + ',' + lastLon.toFixed(4);
       update();
       // Auto-query OSM every ~200m (rough)
-      if (!osmQuerying) queryOSMLimit();
-      if (!radarQuerying && (Date.now() - lastRadarQueryAt > 6000)) detectRadars();
-      if (!trafficQuerying && (Date.now() - lastTrafficQueryAt > 30000)) detectTraffic();
+      if (!osmQuerying && (Date.now() - lastOSMQueryAt > OSM_QUERY_INTERVAL_MS)) queryOSMLimit();
+      if (!radarQuerying && (Date.now() - lastRadarQueryAt > 5000)) detectRadars();
     },
     err => {
       const msgs = { 1:'Permiso denegado', 2:'Posición no disponible', 3:'Tiempo agotado' };
@@ -1242,65 +1227,73 @@ function setGPSStatus(state, text) {
 //  OPENSTREETMAP / OVERPASS API — límite de velocidad
 // ══════════════════════════════════════════════════════════════════
 async function queryOSMLimit() {
-  if (!lastLat || !lastLon || osmQuerying) return;
+  if (lastLat === null || lastLon === null || osmQuerying) return;
+  const now = Date.now();
+  if (now - lastOSMQueryAt < OSM_QUERY_INTERVAL_MS) return;
+  lastOSMQueryAt = now;
   osmQuerying = true;
-  document.getElementById('osmStatus').textContent = '⟳ consultando OSM…';
-
-  // Buscar la vía más cercana con maxspeed en un radio de 50m
-  const query = `
-    [out:json][timeout:6];
-    way(around:50,${lastLat},${lastLon})[highway][maxspeed];
-    out tags 1;
-  `;
-  const url = 'https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(query);
-
+  document.getElementById('osmStatus').textContent = '⟳ via…';
+  // Ask for nearby road geometry, not just the first way returned. This lets us
+  // choose the road we are actually on and read ref/name/maxspeed consistently.
+  const query = `[out:json][timeout:5];way(around:70,${lastLat},${lastLon})[highway];out tags geom;`;
+  const endpoints = [
+    'https://overpass-api.de/api/interpreter',
+    'https://overpass.kumi.systems/api/interpreter'
+  ];
   try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(7000) });
-    const data = await res.json();
-    if (data.elements && data.elements.length > 0) {
-      const el = data.elements[0];
-      currentRoadRef = el.tags?.ref || el.tags?.['ref:road'] || '';
-      currentRoadName = el.tags?.name || '';
-      updateMobileZoneHUD();
-      const maxspeed = el.tags && el.tags.maxspeed;
-      if (maxspeed) {
-        const parsed = parseMaxspeed(maxspeed);
-        if (parsed) {
-          const found = TIPOS_VIA.reduce((best, v) =>
-            Math.abs(v.limite - parsed) < Math.abs(best.limite - parsed) ? v : best
-          );
-          currentVia = found;
-          // Override limit with exact OSM value
-          currentVia = { ...found, limite: parsed };
-          renderViaGrid();
-          document.getElementById('osmStatus').textContent = `✓ OSM: ${parsed} km/h`;
-          update();
-        }
-      }
+    let data = null;
+    for (const ep of endpoints) {
+      try {
+        const res = await fetch(ep + '?data=' + encodeURIComponent(query), {signal:AbortSignal.timeout(6500)});
+        if (!res.ok) continue;
+        const c = await res.json();
+        if (c && Array.isArray(c.elements)) { data = c; break; }
+      } catch {}
+    }
+    if (!data || !data.elements?.length) {
+      document.getElementById('osmStatus').textContent = '– via no identificada';
+      return;
+    }
+    let best = null, bestD = Infinity;
+    for (const el of data.elements) {
+      const g = el.geometry || [];
+      if (!g.length) continue;
+      let d = Infinity;
+      for (const pt of g) d = Math.min(d, haversineKm(lastLat,lastLon,pt.lat,pt.lon));
+      // Prefer a way with an explicit speed limit when distances are comparable.
+      const hasSpeed = !!el.tags?.maxspeed;
+      const score = d + (hasSpeed ? 0 : 0.025);
+      if (score < bestD) { bestD = score; best = el; }
+    }
+    if (!best) return;
+    currentRoadRef = best.tags?.ref || best.tags?.['ref:road'] || '';
+    currentRoadName = best.tags?.name || best.tags?.official_name || '';
+    const maxspeed = best.tags?.maxspeed;
+    let parsed = parseMaxspeed(maxspeed);
+    if (!parsed) {
+      // Safe Spain defaults only when OSM explicitly tells us the road class.
+      const h = best.tags?.highway;
+      const defaults = {motorway:120, trunk:90, primary:90, secondary:90, tertiary:90, residential:30, living_street:20};
+      parsed = defaults[h] || null;
+      if (best.tags?.maxspeed === 'none') parsed = null;
+    }
+    updateMobileZoneHUD();
+    if (parsed) {
+      const found = TIPOS_VIA.reduce((bestVia,v)=>Math.abs(v.limite-parsed)<Math.abs(bestVia.limite-parsed)?v:bestVia, TIPOS_VIA[0]);
+      currentVia = {...found, limite:parsed};
+      renderViaGrid();
+      document.getElementById('osmStatus').textContent = `✓ ${currentRoadRef || currentRoadName || 'via'} · ${parsed} km/h`;
+      update();
     } else {
-      document.getElementById('osmStatus').textContent = '– sin datos OSM';
+      document.getElementById('osmStatus').textContent = `✓ ${currentRoadRef || currentRoadName || 'via'} · límit no indicat`;
     }
   } catch (e) {
-    document.getElementById('osmStatus').textContent = '✗ OSM sin respuesta';
+    document.getElementById('osmStatus').textContent = '✗ OSM sense resposta';
   } finally {
     osmQuerying = false;
-    setTimeout(() => {
-      if (document.getElementById('osmStatus'))
-        document.getElementById('osmStatus').textContent = '';
-    }, 5000);
+    setTimeout(() => { const el=document.getElementById('osmStatus'); if(el) el.textContent=''; }, 4500);
   }
 }
-
-function trafficText(){return alertLang()==='es'?{jam:'RETENCIÓN',inside:'RETENCIÓN · circulación lenta',at:'Retención a',closed:'CARRETERA CERRADA',roadworks:'OBRAS',accident:'ACCIDENTE',source:'Fuente oficial'}:{jam:'RETENCIÓ',inside:'RETENCIÓ · circulació lenta',at:'Retenció a',closed:'CARRETERA TANCADA',roadworks:'OBRES',accident:'ACCIDENT',source:'Font oficial'}}
-function trafficIncidentSeverity(i){const t=(i.type+' '+i.text).toLowerCase();if(/closed|closure|tancad|cortad|road.?closed/.test(t))return 3;if(/accident|collision|colisi|accidente/.test(t))return 3;if(/congestion|queue|retention|retencion|retenció|traffic.?jam|slow.?traffic|circulacio.*lenta|circulación.*lenta/.test(t))return 2;if(/road.?works|works|obras|obres/.test(t))return 1;return 1}
-function trafficIsRelevant(i){if(lastLat===null||lastLon===null)return false;const d=haversineKm(lastLat,lastLon,i.lat,i.lon);if(!Number.isFinite(d)||d>Math.max(5,Number(alertSettings.trafficDistanceM||2000)/1000))return false;if(Number.isFinite(currentHeading)&&currentSpeed>=20&&Number.isFinite(i.bearing)){return angleDiff(currentHeading,i.bearing)<=80}return true}
-function trafficDistance(i){return haversineKm(lastLat,lastLon,i.lat,i.lon)}
-function showTrafficAlert(i,inside=false){const tt=trafficText(),d=trafficDistance(i),meters=Math.max(0,Math.round(d*1000)),sev=trafficIncidentSeverity(i);const title=sev>=3?(i.type&&/closed|tancad|cortad/i.test(i.type)?tt.closed:tt.accident):inside?tt.inside:tt.jam;const dist=inside?'':`${tt.at} ${meters>=1000?(meters/1000).toFixed(1).replace('.',',')+' km':meters+' m'}`;const detail=[i.road||'',dist,i.text||''].filter(Boolean).join(' · ');const el=document.getElementById('trafficAlert');if(el&&alertSettings.visual){el.style.display='block';el.className='traffic-alert show'+(sev>=3?' severe':'');document.getElementById('trafficAlertTitle').textContent=(sev>=3?'🔴 ':'🟠 ')+title;document.getElementById('trafficAlertDetail').textContent=detail;document.getElementById('trafficAlertSource').textContent=`${tt.source} · ${i.source||'DGT/SCT/DT-GV'}`;}const hud=document.getElementById('drivingRadarHUD');if(hud&&alertSettings.visual){hud.classList.remove('traffic','traffic-severe');hud.classList.add(sev>=3?'traffic-severe':'traffic');document.getElementById('drhAlert').textContent=`${sev>=3?'🔴':'🟠'} ${title}${dist?' · '+dist:''}`;hud.classList.add('visible')}if(alertSettings.voice){let msg=sev>=3?(i.type&&/closed|tancad|cortad/i.test(i.type)?(alertLang()==='es'?'Carretera cerrada':'Carretera tancada'):(alertLang()==='es'?'Accidente':'Accident')):inside?tt.inside:`${tt.at} ${meters>=1000?(meters/1000).toFixed(1).replace('.',',')+' quilòmetres':meters+' metres'}`;if(alertLang()==='es'&&meters>=1000&&!inside)msg=`${tt.at} ${(meters/1000).toFixed(1).replace('.',',')} kilómetros`;speakRadar(msg)}lastTrafficAlertAt=Date.now();activeTrafficId=i.id;lastTrafficSeverity=sev}
-function parseTrafficXML(xml,source){const doc=new DOMParser().parseFromString(xml,'application/xml');const out=[];const records=[...doc.querySelectorAll('situationRecord')];for(const r of records){const txt=(r.textContent||'').replace(/\s+/g,' ').trim();const coords=[...r.querySelectorAll('latitude, longitude')];let lat=null,lon=null;const latEl=r.querySelector('latitude'),lonEl=r.querySelector('longitude');if(latEl&&lonEl){lat=parseFloat(latEl.textContent);lon=parseFloat(lonEl.textContent)}else{const nums=[...r.querySelectorAll('pointCoordinates,coordinatePair')].flatMap(x=>(x.textContent||'').trim().split(/[,;\s]+/).map(Number).filter(Number.isFinite));if(nums.length>=2){lat=nums.find(n=>n>=-90&&n<=90);lon=nums.find((n,j)=>j>0&&n>=-180&&n<=180)}}if(!Number.isFinite(lat)||!Number.isFinite(lon))continue;let road='';for(const q of r.querySelectorAll('roadName,roadNumber,roadNameText,roadNumberText')){if(q.textContent.trim()){road=q.textContent.trim();break}}let type='';for(const q of r.querySelectorAll('situationRecordType,probabilityOfOccurrence,impact,trafficFlowCharacteristics,abnormalTrafficType')){if(q.textContent.trim()){type+=' '+q.textContent.trim()}}const id=r.getAttribute('id')||`${source}-${lat}-${lon}-${out.length}`;let bearing=null;const dir=r.querySelector('tpegDirection, direction, bearing');if(dir&&Number.isFinite(parseFloat(dir.textContent)))bearing=parseFloat(dir.textContent);out.push({id,lat,lon,road,text:txt.slice(0,240),type:type.trim(),source,bearing})}return out}
-async function fetchTrafficFeed(url,source){try{const res=await fetch(url,{signal:AbortSignal.timeout(15000),cache:'no-store'});if(!res.ok)throw new Error('HTTP '+res.status);return parseTrafficXML(await res.text(),source)}catch(e){return []}}
-async function fetchEuskadiTraffic(){try{const d=new Date(),url=`https://api.euskadi.eus/traffic/v1.0/incidences/byDate/${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;const res=await fetch(url,{signal:AbortSignal.timeout(10000),cache:'no-store'});if(!res.ok)return [];const j=await res.json();const arr=Array.isArray(j)?j:(j.items||j.incidents||j.incidences||[]);return arr.map((x,k)=>{const lat=Number(x.latitude??x.lat??x.geo?.lat),lon=Number(x.longitude??x.lon??x.geo?.lon);return Number.isFinite(lat)&&Number.isFinite(lon)?{id:'e'+(x.id??k),lat,lon,road:x.road??x.carretera??'',text:x.description??x.descripcion??x.incidence??x.type??'',type:x.type??x.tipo??'',source:'DT-GV',bearing:Number(x.direction??x.bearing)}:null}).filter(Boolean)}catch{return []}}
-async function detectTraffic(){if(!alertSettings.traffic||lastLat===null||lastLon===null||trafficQuerying)return;trafficQuerying=true;lastTrafficQueryAt=Date.now();try{const feeds=[];const base='https://nap.dgt.es/dataset';feeds.push(fetchTrafficFeed('https://nap.dgt.es/dataset/incidencias-dgt-datex2-v3-7/resource/1d36ea74-593d-4e45-acfa-fb8db5a460bc/download/datex2_v37.xml','DGT'));feeds.push(fetchTrafficFeed('https://nap.dgt.es/dataset/incidencias-sct/resource/cf9b470a-a14e-46d9-b2a9-f09df1cb1eb2/download/content.xml','SCT'));feeds.push(fetchEuskadiTraffic());const rr=await Promise.all(feeds);trafficIncidents=rr.flat().filter(trafficIsRelevant);checkTrafficProximity()}finally{trafficQuerying=false}}
-function checkTrafficProximity(){if(!alertSettings.traffic||!trafficIncidents.length)return;const relevant=trafficIncidents.map(i=>({...i,d:trafficDistance(i),sev:trafficIncidentSeverity(i)})).filter(i=>i.d<=Number(alertSettings.trafficDistanceM||2000)/1000).filter(i=>!Number.isFinite(currentHeading)||currentSpeed<20||!Number.isFinite(i.bearing)||angleDiff(currentHeading,i.bearing)<=90).sort((a,b)=>a.d-b.d||b.sev-a.sev);const i=relevant[0];if(!i)return;const inside=i.d<.15;if(Date.now()-lastTrafficAlertAt<30000&&activeTrafficId===i.id&&(!alertSettings.trafficRepeat||i.sev<=lastTrafficSeverity))return;showTrafficAlert(i,inside)}
 
 function speakRadar(text) {
   if(!alertSettings.voice) return;
@@ -1330,7 +1323,7 @@ async function detectRadars(){
   }catch(e){updateRadarScanHUD('⚠ RADARS: dades no disponibles')}finally{radarQuerying=false}
 }
 function updateRadarScanHUD(message){const hud=document.getElementById('drivingRadarHUD'),live=document.getElementById('drhLive'),alert=document.getElementById('drhAlert');if(!hud||!live||!alert||segmentRadar.active)return;live.style.display='none';alert.textContent=message||T().scanning(radarDetection.fixed.length+radarDetection.average.length);hud.classList.add('visible')}
-function autoStartAverageRadar(av){segmentRadar={active:true,auto:true,id:av.id,totalKm:av.totalKm,limitKmh:av.limit,distanceKm:0,startTime:performance.now(),lastLat,lastLon,completed:false};document.getElementById('segmentCard')?.classList.add('auto-hidden');document.getElementById('segmentState').textContent='EN CURS · AUTO';document.getElementById('segmentLive').classList.add('active');const hud=document.getElementById('drivingRadarHUD'),live=document.getElementById('drhLive');if(hud)hud.classList.add('visible');if(live)live.style.display='block';showRadarAlert(T().start(av.limit,av.totalKm.toFixed(1).replace('.',',')),'average');speakRadar(T().startVoice(av.limit)); updateRouteHUD(av);updateSegmentRadarUI()}
+function autoStartAverageRadar(av){ const entryProgress=Math.max(0,Math.min(0.98,routeProgressForRadar(av)||0)); segmentRadar={active:true,auto:true,id:av.id,totalKm:av.totalKm,limitKmh:av.limit,distanceKm:av.totalKm*entryProgress,startTime:performance.now(),lastLat,lastLon,completed:false,entryProgress};document.getElementById('segmentCard')?.classList.add('auto-hidden');document.getElementById('segmentState').textContent='EN CURS · AUTO';document.getElementById('segmentLive').classList.add('active');const hud=document.getElementById('drivingRadarHUD'),live=document.getElementById('drhLive');if(hud)hud.classList.add('visible');if(live)live.style.display='block';showRadarAlert(T().start(av.limit,av.totalKm.toFixed(1).replace('.',',')),'average');speakRadar(T().startVoice(av.limit)); updateRouteHUD(av);updateSegmentRadarUI()}
 function routeProgressForRadar(r){
   if(!r||lastLat===null||lastLon===null)return null;
   if(r.type==='average'){
@@ -1361,7 +1354,6 @@ function checkRadarProximity(){
   if(lastLat===null||lastLon===null)return;
   updateNearestRadarHUD();
   const now=Date.now(), maxD=Math.max(100,Number(alertSettings.distanceM)||1000)/1000;
-  checkTrafficProximity();
   const mobileZone=updateMobileZoneHUD();
   if(mobileZone && alertSettings.mobileZones && alertSettings.visual){
     const route=document.getElementById('drhRoute'); if(route) route.classList.add('visible');
@@ -1372,13 +1364,18 @@ function checkRadarProximity(){
   const av=alertSettings.average ? radarDetection.average.map(r=>({...r,d:distanceToRadar(r)})).filter(r=>r.d<Math.max(1.5,maxD/1000)&&radarDirectionOK(r)).sort((a,b)=>a.d-b.d)[0] : null;
   if(av){
     radarDetection.activeAverageId=av.id;
-    if(!segmentRadar.active&&av.d<.35){autoStartAverageRadar(av);return}
-    if(!segmentRadar.active&&av.d<maxD/1000&&now-radarDetection.lastAlertAt>20000){
+    const completedAt=radarDetection.completedAverage.get(av.id)||0;
+    const canRestart=now-completedAt>RADAR_COMPLETION_COOLDOWN_MS;
+    const progress=routeProgressForRadar(av)||0;
+    const inside=progress>0.02 && progress<0.98;
+    if(!segmentRadar.active && canRestart && (av.d<.35 || inside)) { autoStartAverageRadar(av); return; }
+    if(!segmentRadar.active&&canRestart&&av.d<maxD/1000&&now-radarDetection.lastAlertAt>20000){
       radarDetection.lastAlertAt=now;
       showRadarAlert(T().avg(Math.round(av.d*1000),av.limit),'average');
       speakRadar(T().avgVoice(Math.round(av.d*1000),av.limit)); updateRouteHUD(av);
     }
-    return;
+  } else {
+    radarDetection.activeAverageId=null;
   }
   const fx=alertSettings.fixed ? radarDetection.fixed.map(r=>({...r,d:distanceToRadar(r)})).filter(r=>r.d<maxD/1000).sort((a,b)=>a.d-b.d)[0] : null;
   if(fx&&now-radarDetection.lastAlertAt>20000){
@@ -1456,11 +1453,24 @@ function updateSegmentRadarPosition(lat, lon) {
   if (segmentRadar.distanceKm >= segmentRadar.totalKm) {
     const wasAuto = !!segmentRadar.auto;
     segmentRadar.completed = true;
+    const completedId = segmentRadar.id;
+    if (wasAuto && completedId) radarDetection.completedAverage.set(completedId, Date.now());
     stopSegmentRadar();
     document.getElementById('segmentState').textContent = 'TRAM COMPLETAT';
     showRadarAlert(T().complete,'average');
     if(wasAuto) speakRadar(T().completeVoice);
     showToast('✓ Radar de tram completat');
+    // Reset the automatic tracker so the next average-speed radar can start cleanly.
+    if (wasAuto ) {
+      setTimeout(()=>{
+        if(!segmentRadar.active && segmentRadar.id===completedId){
+          segmentRadar={active:false,auto:false,totalKm:0,limitKmh:0,distanceKm:0,startTime:0,lastLat,lastLon,completed:false};
+          radarDetection.activeAverageId=null;
+          document.getElementById('drhLive')?.style.setProperty('display','none');
+          document.getElementById('drhRoute')?.classList.remove('visible');
+        }
+      },1200);
+    }
   }
 }
 
@@ -1804,7 +1814,7 @@ if ("serviceWorker" in navigator) {
     });
     navigator.serviceWorker.register('./sw.js?v=18', { updateViaCache: 'none' })
       .then(reg => {
-        console.log('SpeedGuard SW V18 registered', reg);
+        console.log('SpeedGuard SW V19 registered', reg);
         reg.update().catch(() => {});
       })
       .catch(e => console.warn('SW err', e));
