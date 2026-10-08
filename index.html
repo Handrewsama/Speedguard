@@ -407,12 +407,12 @@
     .drh-compass-dial{position:relative;width:82px;height:82px;min-width:82px;border:1px solid rgba(0,255,136,.38);border-radius:50%;background:radial-gradient(circle,#111a19 0 52%,#07100f 53% 100%);box-shadow:inset 0 0 12px rgba(0,255,136,.08);overflow:hidden;}
     .drh-compass-dial::before{content:"";position:absolute;inset:7px;border:1px dashed rgba(255,255,255,.13);border-radius:50%;}
     .drh-dir{position:absolute;font:900 12px 'Share Tech Mono',monospace;color:#69777a;z-index:2;}
-    .drh-dir.n{top:5px;left:50%;transform:translateX(-50%);color:#00ff88}.drh-dir.e{right:7px;top:50%;transform:translateY(-50%)}.drh-dir.s{bottom:5px;left:50%;transform:translateX(-50%)}.drh-dir.w{left:7px;top:50%;transform:translateY(-50%)}
+    .drh-dir.n{top:3px;left:50%;transform:translateX(-50%);color:#00ff88}.drh-dir.e{right:5px;top:50%;transform:translateY(-50%)}.drh-dir.s{bottom:3px;left:50%;transform:translateX(-50%)}.drh-dir.w{left:5px;top:50%;transform:translateY(-50%)}
     .drh-tick{position:absolute;width:1px;height:5px;background:#556365;left:50%;top:4px;transform-origin:50% 25px;}.drh-tick.t90{transform:rotate(90deg)}.drh-tick.t180{transform:rotate(180deg)}.drh-tick.t270{transform:rotate(270deg)}
-    .drh-heading{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font:800 10px 'Share Tech Mono',monospace;color:#a9b3b5;z-index:3;}
-    .drh-arrow{position:absolute;left:50%;top:50%;transform:translate(-50%,-53%);font-size:38px;line-height:1;color:#00ff88;text-shadow:0 0 10px rgba(0,255,136,.65);z-index:4;transition:transform .18s ease,color .18s ease;}
+    .drh-heading{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font:700 7px 'Share Tech Mono',monospace;color:#a9b3b5;z-index:3;}
+    .drh-arrow{position:absolute;left:50%;top:50%;transform:translate(-50%,-53%);font-size:40px;font-weight:900;line-height:1;color:#00ff88;text-shadow:0 0 10px rgba(0,255,136,.65);z-index:4;transition:transform .18s ease,color .18s ease;}
     .drh-radar-info{min-width:0;flex:1;display:grid;grid-template-columns:1fr auto;align-items:center;column-gap:8px;row-gap:2px;}
-    .drh-radar-type{font:900 15px/1.1 'Rajdhani',sans-serif;letter-spacing:1px;color:#eafcff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.drh-radar-distance{font:900 24px 'Share Tech Mono',monospace;color:#00ff88;white-space:nowrap}.drh-radar-limit{grid-column:1/-1;font:800 14px 'Share Tech Mono',monospace;color:#9ed5ff}.drh-radar-info.empty{opacity:.62}
+    .drh-radar-type{font:900 16px/1.1 'Rajdhani',sans-serif;letter-spacing:1px;color:#eafcff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.drh-radar-distance{font:800 24px 'Share Tech Mono',monospace;color:#00ff88;white-space:nowrap}.drh-radar-limit{grid-column:1/-1;font:800 15px 'Share Tech Mono',monospace;color:#9ed5ff}.drh-radar-info.empty{opacity:.62}
     .drh-compass-dial.no-heading .drh-arrow{opacity:.28}.drh-compass-dial.no-heading .drh-heading{color:#69777a}
 
     /* ── DRIVING RADAR HUD: zero-touch while driving ─────── */
@@ -422,14 +422,14 @@
     #drivingRadarHUD.fixed .drh-alert{color:#dfff9b}
     #drivingRadarHUD.danger .drh-alert{color:#ff8f8f}
     #drivingRadarHUD .drh-live{padding:8px 10px 9px}
-    #drivingRadarHUD .drh-head{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;color:#77778d;letter-spacing:1px;margin-bottom:6px}
-    #drivingRadarHUD .drh-title{color:#eafcff;font-size:14px;font-weight:800}
+    #drivingRadarHUD .drh-head{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:9px;color:#77778d;letter-spacing:1px;margin-bottom:6px}
+    #drivingRadarHUD .drh-title{color:#eafcff;font-size:15px;font-weight:800}
     #drivingRadarHUD .drh-track{height:9px;border-radius:999px;background:#171722;border:1px solid #28283a;overflow:hidden}
     #drivingRadarHUD .drh-fill{height:100%;width:0;background:linear-gradient(90deg,#00ff88,#00c8ff);transition:width .25s linear}
     #drivingRadarHUD .drh-meta{display:flex;justify-content:space-between;margin-top:4px;font:9px 'Share Tech Mono',monospace;color:#77778d}
     #drivingRadarHUD .drh-metrics{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:7px}
     #drivingRadarHUD .drh-metric{display:flex;align-items:baseline;justify-content:center;gap:5px;padding:4px 5px;border-radius:8px;background:#0b0b12;border:1px solid #202033}
-    #drivingRadarHUD .drh-label{font-size:11px;color:#666680;letter-spacing:.5px}
+    #drivingRadarHUD .drh-label{font-size:8px;color:#666680;letter-spacing:.5px}
     #drivingRadarHUD .drh-value{font:800 27px 'Share Tech Mono',monospace;color:#00ff88}
     #drivingRadarHUD .drh-warning{text-align:center;font-size:9px;font-weight:800;letter-spacing:.5px;margin-top:5px;min-height:11px}
     body.driving-mode #driveModeBtn,body.driving-mode #driveStatus{display:none}
@@ -449,7 +449,13 @@
     .route-labels{display:flex;justify-content:space-between;font:8px 'Share Tech Mono',monospace;color:#687277;margin-top:2px}
     @keyframes radarBlink{0%,100%{box-shadow:0 0 0 0 rgba(0,255,136,.8);opacity:1}50%{box-shadow:0 0 0 7px rgba(0,255,136,0);opacity:.35}}
     @keyframes routePulse{50%{opacity:.38}}
-    body.driving-mode #drivingRadarHUD{display:block}
+    
+    .road-diagnostic{margin:6px 10px 8px;padding:8px 10px;border:1px solid #26363a;border-radius:10px;background:#071011;color:#dffcff;font:800 12px/1.3 'Rajdhani',sans-serif;display:none}
+    .road-diagnostic.visible{display:block}.road-diagnostic.ok{border-color:#1e694d}.road-diagnostic.warn{border-color:#735d1e;color:#ffe9a8}.road-diagnostic.bad{border-color:#6b2d2d;color:#ffaaaa}
+    .road-main{display:flex;justify-content:space-between;gap:8px}.road-name{font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.road-limit{font:900 22px 'Share Tech Mono',monospace;color:#00ff88}.road-meta{margin-top:3px;color:#83979b;font-size:10px;letter-spacing:.5px}
+    #tripSummaryModal{display:none;position:fixed;inset:0;z-index:2147483646;background:rgba(0,0,0,.82);padding:18px;overflow:auto}
+    #tripSummaryModal.visible{display:block}.trip-box{max-width:520px;margin:5vh auto;background:#0b1112;border:1px solid #2b4548;border-radius:18px;padding:18px;color:#efffff}.trip-box h2{margin:0 0 8px;font-size:24px}.trip-summary-sub{color:#829497;font-size:12px;margin-bottom:14px}.trip-row{display:grid;grid-template-columns:1fr auto auto;gap:8px;padding:10px 0;border-bottom:1px solid #1d292b;align-items:center}.trip-row .rname{font-weight:900;font-size:15px}.trip-row .rmeta{font-size:10px;color:#809194}.trip-row .rspeed{font:900 22px 'Share Tech Mono',monospace}.trip-close{margin-top:16px;width:100%;padding:13px;border-radius:11px;border:1px solid #345;color:#dff;background:#101b1d;font-weight:900}
+body.driving-mode #drivingRadarHUD{display:block}
     body.driving-mode #segmentCard{display:none}
     @media(max-width:600px),(max-height:700px){
       #drivingRadarHUD{margin:0 8px 4px;border-radius:10px}
@@ -457,10 +463,11 @@
       #drivingRadarHUD .drh-live{padding:7px 9px 8px}
       #drivingRadarHUD .drh-value{font-size:20px}
       #drhCompassWrap{padding:6px 8px;gap:8px}
-      .drh-compass-dial{width:76px;height:76px;min-width:76px}
-      .drh-arrow{font-size:34px}
-      .drh-radar-distance{font-size:21px}
-      .drh-radar-type{font-size:13px}
+      .drh-compass-dial{width:82px;height:82px;min-width:82px}
+      .drh-radar-type{font-size:16px}.drh-radar-distance{font-size:24px}.drh-radar-limit{font-size:15px}
+      .drh-arrow{font-size:21px}
+      .drh-radar-distance{font-size:14px}
+      .drh-radar-type{font-size:9px}
     }
 
     /* ── MOBILE / PHONE LAYOUT ───────────────────────────── */
@@ -596,7 +603,7 @@
   <div id="titleBar">
     <div class="tb-left">
       <div class="tb-dot" id="statusDot"></div>
-      <span class="tb-title">SPEEDGUARD <span class="app-version">V19</span></span>
+      <span class="tb-title">SPEEDGUARD <span class="app-version">V20</span></span>
     </div>
     <div class="tb-actions">
       <button class="tb-btn" id="minimizeBtn" title="Minimizar">_</button>
@@ -632,6 +639,19 @@
       <div class="drh-meta"><span id="drhDone">0,00 km</span><span id="drhLeft">0,00 km</span></div>
       <div class="drh-metrics"><div class="drh-metric"><span class="drh-label">ACTUAL</span><span class="drh-value" id="drhCurrent">0</span></div><div class="drh-metric"><span class="drh-label">MITJANA</span><span class="drh-value" id="drhAverage">0,0</span></div></div>
       <div class="drh-warning" id="drhWarning"></div>
+    </div>
+  </div>
+  <div id="roadDiagnostic" class="road-diagnostic" aria-live="polite">
+    <div class="road-main"><span class="road-name" id="roadDiagnosticName">VIA NO DETECTADA</span><span class="road-limit" id="roadDiagnosticLimit">—</span></div>
+    <div class="road-meta" id="roadDiagnosticMeta">Esperant GPS…</div>
+  </div>
+
+  <div id="tripSummaryModal" aria-live="polite">
+    <div class="trip-box">
+      <h2>RESUM DEL VIATGE</h2>
+      <div class="trip-summary-sub" id="tripSummarySub">Radars detectats durant el viatge</div>
+      <div id="tripSummaryRows"></div>
+      <button class="trip-close" type="button" onclick="closeTripSummary()">TANCAR</button>
     </div>
   </div>
 
@@ -890,10 +910,9 @@ let osmQuerying  = false;
 
 // Radar de tram state
 let segmentRadar = { active:false, totalKm:5, limitKmh:120, distanceKm:0, startTime:0, lastLat:null, lastLon:null, completed:false };
-let radarDetection = { fixed:[], average:[], alerted:new Set(), lastQueryLat:null, lastQueryLon:null, lastAlertAt:0, activeAverageId:null, completedAverage:new Map() };
-let lastOSMQueryAt = 0;
-const OSM_QUERY_INTERVAL_MS = 2500;
-const RADAR_COMPLETION_COOLDOWN_MS = 90000;
+let radarDetection = { fixed:[], average:[], alerted:new Set(), lastQueryLat:null, lastQueryLon:null, lastAlertAt:0, activeAverageId:null };
+let roadDetection = {ref:'',name:'',limit:null,highway:'',distanceM:null,bearing:null,headingDiff:null,source:'OSM',updatedAt:0,confidence:'bad'};
+let tripRadarLog=[]; let tripStartedAt=Date.now(); let loggedRadarIds=new Set(); let lastRoadQueryAt=0; let completedAverageRadars=new Map();
 let radarQuerying = false;
 let lastRadarQueryAt = 0;
 
@@ -1021,7 +1040,7 @@ function applyDrivingMode() {
   if (btn) { btn.textContent = drivingMode ? '✓ MODO CONDUCCIÓN ACTIVO' : '🚗 ACTIVAR MODO CONDUCCIÓN'; btn.classList.toggle('active', drivingMode); }
   if (status) status.textContent = drivingMode ? 'VIGILANDO' : 'LISTO';
 }
-async function exitDrivingMode(){ drivingMode=false; localStorage.setItem('sg_driving_mode','0'); await releaseScreenWakeLock(); applyDrivingMode(); const mc=document.getElementById('mainContent'); if(mc) mc.scrollTop=0; }
+async function exitDrivingMode(){ drivingMode=false; localStorage.setItem('sg_driving_mode','0'); await releaseScreenWakeLock(); applyDrivingMode(); const mc=document.getElementById('mainContent'); if(mc) mc.scrollTop=0; if(tripRadarLog.length) showTripSummary(); }
 async function toggleDrivingMode() {
   drivingMode = !drivingMode;
   localStorage.setItem('sg_driving_mode', drivingMode ? '1' : '0');
@@ -1075,7 +1094,7 @@ function nearestRadar(){
     const b=bearingDeg(lastLat,lastLon,r.lat,r.lon);
     return angleDiff(heading,b)<=100;
   }).sort((a,b)=>a.d-b.d);
-  return (ahead[0]||all.sort((a,b)=>a.d-b.d)[0])||null;
+  return (ahead[0] || (!Number.isFinite(heading)?all.sort((a,b)=>a.d-b.d)[0]:null)) || null;
 }
 function updateNearestRadarHUD(){
   const dial=document.getElementById('drhCompassDial'),arrow=document.getElementById('drhArrow'),headingEl=document.querySelector('#drhCompassDial .drh-heading');
@@ -1185,24 +1204,25 @@ function startGPS() {
     return;
   }
   setGPSStatus('waiting', 'Buscando señal…');
+  if (!tripStartedAt || Date.now()-tripStartedAt>6*60*60*1000) startNewTrip();
   gpsWatchId = navigator.geolocation.watchPosition(
     pos => {
       const spd = pos.coords.speed != null ? pos.coords.speed * 3.6 : null;
       if (spd != null && Number.isFinite(spd)) { rawGpsSpeed = spd; currentSpeed = applySpeedCalibration(spd); }
       if (Number.isFinite(pos.coords.heading) && pos.coords.heading >= 0) currentHeading = pos.coords.heading;
       lastGpsTimestamp = pos.timestamp || Date.now();
+      updateNearestRadarHUD();
       lastLat = pos.coords.latitude;
       lastLon = pos.coords.longitude;
-      updateNearestRadarHUD();
       updateSegmentRadarPosition(lastLat, lastLon);
       const acc = Math.round(pos.coords.accuracy);
       setGPSStatus('ok', `GPS ±${acc}m`);
       document.getElementById('gpsCoords').textContent =
         lastLat.toFixed(4) + ',' + lastLon.toFixed(4);
       update();
-      // Auto-query OSM every ~200m (rough)
-      if (!osmQuerying && (Date.now() - lastOSMQueryAt > OSM_QUERY_INTERVAL_MS)) queryOSMLimit();
-      if (!radarQuerying && (Date.now() - lastRadarQueryAt > 5000)) detectRadars();
+      // Update the real current road frequently (about every 2.5s).
+      if (!osmQuerying && Date.now()-lastRoadQueryAt >= 2500) queryOSMLimit();
+      if (!radarQuerying && (Date.now() - lastRadarQueryAt > 6000)) detectRadars();
     },
     err => {
       const msgs = { 1:'Permiso denegado', 2:'Posición no disponible', 3:'Tiempo agotado' };
@@ -1227,72 +1247,52 @@ function setGPSStatus(state, text) {
 //  OPENSTREETMAP / OVERPASS API — límite de velocidad
 // ══════════════════════════════════════════════════════════════════
 async function queryOSMLimit() {
-  if (lastLat === null || lastLon === null || osmQuerying) return;
-  const now = Date.now();
-  if (now - lastOSMQueryAt < OSM_QUERY_INTERVAL_MS) return;
-  lastOSMQueryAt = now;
-  osmQuerying = true;
-  document.getElementById('osmStatus').textContent = '⟳ via…';
-  // Ask for nearby road geometry, not just the first way returned. This lets us
-  // choose the road we are actually on and read ref/name/maxspeed consistently.
-  const query = `[out:json][timeout:5];way(around:70,${lastLat},${lastLon})[highway];out tags geom;`;
-  const endpoints = [
-    'https://overpass-api.de/api/interpreter',
-    'https://overpass.kumi.systems/api/interpreter'
-  ];
-  try {
-    let data = null;
-    for (const ep of endpoints) {
-      try {
-        const res = await fetch(ep + '?data=' + encodeURIComponent(query), {signal:AbortSignal.timeout(6500)});
-        if (!res.ok) continue;
-        const c = await res.json();
-        if (c && Array.isArray(c.elements)) { data = c; break; }
-      } catch {}
+  if (lastLat===null || lastLon===null || osmQuerying) return;
+  osmQuerying=true; lastRoadQueryAt=Date.now();
+  const status=document.getElementById('osmStatus'); if(status) status.textContent='⟳ VIA…';
+  const q=`[out:json][timeout:5];way(around:80,${lastLat},${lastLon})[highway][highway!~"^(footway|path|cycleway|steps|pedestrian|service)$"];out tags geom;`;
+  const endpoints=['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter'];
+  const pointSeg=(lat,lon,a,b)=>{const x=lon,y=lat,x1=a.lon,y1=a.lat,x2=b.lon,y2=b.lat;const dx=x2-x1,dy=y2-y1;const t=Math.max(0,Math.min(1,((x-x1)*dx+(y-y1)*dy)/(dx*dx+dy*dy||1)));const px=x1+t*dx,py=y1+t*dy;return {d:haversineKm(y,x,py,px),px,py}};
+  try{
+    let data=null;
+    for(const ep of endpoints){try{const res=await fetch(ep+'?data='+encodeURIComponent(q),{signal:AbortSignal.timeout(6500)});if(!res.ok)continue;const d=await res.json();if(Array.isArray(d.elements)){data=d;break}}catch{}}
+    if(!data) throw new Error('no data');
+    const candidates=[];
+    for(const e of data.elements||[]){
+      if(e.type!=='way'||!e.geometry?.length) continue;
+      let best={d:Infinity,bearing:null};
+      for(let i=0;i<e.geometry.length-1;i++){
+        const a=e.geometry[i],b=e.geometry[i+1],seg=pointSeg(lastLat,lastLon,a,b); if(seg.d<best.d) best={d:seg.d,bearing:bearingDeg(a.lat,a.lon,b.lat,b.lon)};
+      }
+      const tags=e.tags||{}; const roadBearing=best.bearing; const diff=Number.isFinite(currentHeading)&&Number.isFinite(roadBearing)?angleDiff(currentHeading,roadBearing):90;
+      const dirPenalty=Number.isFinite(currentHeading)?Math.min(diff,Math.abs(180-diff))*0.35:0;
+      const speed=parseMaxspeed(tags.maxspeed||tags['maxspeed:forward']||tags['maxspeed:lanes']);
+      const named=tags.ref||tags.name;
+      const score=best.d*1000 + dirPenalty - (speed?12:0) - (named?3:0) + (tags.oneway==='yes'&&diff>90?20:0);
+      candidates.push({e,d:best.d,bearing:roadBearing,diff,speed,score});
     }
-    if (!data || !data.elements?.length) {
-      document.getElementById('osmStatus').textContent = '– via no identificada';
-      return;
+    candidates.sort((a,b)=>a.score-b.score); const c=candidates[0];
+    if(!c || c.d>0.09){
+      roadDetection={...roadDetection,confidence:'bad',updatedAt:Date.now(),distanceM:c?c.d*1000:null};
+      updateRoadDiagnostic(); if(status)status.textContent='– VIA NO SEGURA'; return;
     }
-    let best = null, bestD = Infinity;
-    for (const el of data.elements) {
-      const g = el.geometry || [];
-      if (!g.length) continue;
-      let d = Infinity;
-      for (const pt of g) d = Math.min(d, haversineKm(lastLat,lastLon,pt.lat,pt.lon));
-      // Prefer a way with an explicit speed limit when distances are comparable.
-      const hasSpeed = !!el.tags?.maxspeed;
-      const score = d + (hasSpeed ? 0 : 0.025);
-      if (score < bestD) { bestD = score; best = el; }
+    const t=c.e.tags||{}; const limit=c.speed||null; const ref=t.ref||''; const name=t.name||'';
+    roadDetection={ref,name,limit,highway:t.highway||'',distanceM:c.d*1000,bearing:c.bearing,headingDiff:c.diff,source:'OSM',updatedAt:Date.now(),confidence:(c.d<.025&&c.diff<45)?'ok':(c.d<.06&&c.diff<75)?'warn':'bad'};
+    if(ref) currentRoadRef=ref; if(name) currentRoadName=name;
+    updateRoadDiagnostic(); updateMobileZoneHUD();
+    if(limit){
+      const found=TIPOS_VIA.reduce((best,v)=>Math.abs(v.limite-limit)<Math.abs(best.limite-limit)?v:best);
+      currentVia={...found,limite:limit}; renderViaGrid(); update();
     }
-    if (!best) return;
-    currentRoadRef = best.tags?.ref || best.tags?.['ref:road'] || '';
-    currentRoadName = best.tags?.name || best.tags?.official_name || '';
-    const maxspeed = best.tags?.maxspeed;
-    let parsed = parseMaxspeed(maxspeed);
-    if (!parsed) {
-      // Safe Spain defaults only when OSM explicitly tells us the road class.
-      const h = best.tags?.highway;
-      const defaults = {motorway:120, trunk:90, primary:90, secondary:90, tertiary:90, residential:30, living_street:20};
-      parsed = defaults[h] || null;
-      if (best.tags?.maxspeed === 'none') parsed = null;
-    }
-    updateMobileZoneHUD();
-    if (parsed) {
-      const found = TIPOS_VIA.reduce((bestVia,v)=>Math.abs(v.limite-parsed)<Math.abs(bestVia.limite-parsed)?v:bestVia, TIPOS_VIA[0]);
-      currentVia = {...found, limite:parsed};
-      renderViaGrid();
-      document.getElementById('osmStatus').textContent = `✓ ${currentRoadRef || currentRoadName || 'via'} · ${parsed} km/h`;
-      update();
-    } else {
-      document.getElementById('osmStatus').textContent = `✓ ${currentRoadRef || currentRoadName || 'via'} · límit no indicat`;
-    }
-  } catch (e) {
-    document.getElementById('osmStatus').textContent = '✗ OSM sense resposta';
-  } finally {
-    osmQuerying = false;
-    setTimeout(() => { const el=document.getElementById('osmStatus'); if(el) el.textContent=''; }, 4500);
-  }
+  }catch(e){roadDetection={...roadDetection,confidence:'bad',updatedAt:Date.now()};updateRoadDiagnostic();if(status)status.textContent='✗ VIA OSM';}
+  finally{osmQuerying=false;}
+}
+function updateRoadDiagnostic(){
+  const box=document.getElementById('roadDiagnostic'); if(!box)return; const n=document.getElementById('roadDiagnosticName'),l=document.getElementById('roadDiagnosticLimit'),m=document.getElementById('roadDiagnosticMeta');
+  const label=roadDetection.ref||roadDetection.name||'VIA NO DETECTADA'; n.textContent=label; l.textContent=roadDetection.limit?roadDetection.limit+' km/h':'—';
+  const age=roadDetection.updatedAt?Math.max(0,(Date.now()-roadDetection.updatedAt)/1000):999; const d=Number.isFinite(roadDetection.distanceM)?Math.round(roadDetection.distanceM):null; const hd=Number.isFinite(roadDetection.headingDiff)?Math.round(roadDetection.headingDiff):null;
+  const state=roadDetection.confidence==='ok'?'VIA ACTUAL CONFIRMADA':roadDetection.confidence==='warn'?'VIA PROBABLE — comprovant direcció':'VIA NO CONFIRMADA';
+  box.className='road-diagnostic visible '+roadDetection.confidence; m.textContent=`${state} · ${d!==null?d+' m del tram':''}${hd!==null?' · direcció '+hd+'°':''} · actualitzat fa ${age.toFixed(1)} s`;
 }
 
 function speakRadar(text) {
@@ -1323,7 +1323,12 @@ async function detectRadars(){
   }catch(e){updateRadarScanHUD('⚠ RADARS: dades no disponibles')}finally{radarQuerying=false}
 }
 function updateRadarScanHUD(message){const hud=document.getElementById('drivingRadarHUD'),live=document.getElementById('drhLive'),alert=document.getElementById('drhAlert');if(!hud||!live||!alert||segmentRadar.active)return;live.style.display='none';alert.textContent=message||T().scanning(radarDetection.fixed.length+radarDetection.average.length);hud.classList.add('visible')}
-function autoStartAverageRadar(av){ const entryProgress=Math.max(0,Math.min(0.98,routeProgressForRadar(av)||0)); segmentRadar={active:true,auto:true,id:av.id,totalKm:av.totalKm,limitKmh:av.limit,distanceKm:av.totalKm*entryProgress,startTime:performance.now(),lastLat,lastLon,completed:false,entryProgress};document.getElementById('segmentCard')?.classList.add('auto-hidden');document.getElementById('segmentState').textContent='EN CURS · AUTO';document.getElementById('segmentLive').classList.add('active');const hud=document.getElementById('drivingRadarHUD'),live=document.getElementById('drhLive');if(hud)hud.classList.add('visible');if(live)live.style.display='block';showRadarAlert(T().start(av.limit,av.totalKm.toFixed(1).replace('.',',')),'average');speakRadar(T().startVoice(av.limit)); updateRouteHUD(av);updateSegmentRadarUI()}
+function autoStartAverageRadar(av){
+  const blockedUntil=completedAverageRadars.get(av.id)||0; if(blockedUntil>Date.now()) return;
+  const entered=haversineKm(av.lat,av.lon,lastLat,lastLon);
+  const initialDone=Math.max(0,Math.min(av.totalKm*0.98,entered));
+  segmentRadar={active:true,auto:true,id:av.id,totalKm:av.totalKm,limitKmh:av.limit,distanceKm:initialDone,startTime:performance.now(),lastLat,lastLon,completed:false,entrySpeed:currentSpeed};
+  if(!loggedRadarIds.has(av.id)) logRadarPass(av,'average',currentSpeed,'entrada al tram');document.getElementById('segmentCard')?.classList.add('auto-hidden');document.getElementById('segmentState').textContent='EN CURS · AUTO';document.getElementById('segmentLive').classList.add('active');const hud=document.getElementById('drivingRadarHUD'),live=document.getElementById('drhLive');if(hud)hud.classList.add('visible');if(live)live.style.display='block';showRadarAlert(T().start(av.limit,av.totalKm.toFixed(1).replace('.',',')),'average');speakRadar(T().startVoice(av.limit)); updateRouteHUD(av);updateSegmentRadarUI()}
 function routeProgressForRadar(r){
   if(!r||lastLat===null||lastLon===null)return null;
   if(r.type==='average'){
@@ -1350,8 +1355,24 @@ function updateRouteHUD(r){
   }
   if(alertSettings.mobileZones && getSctMobileZone()){ zone.style.display='block'; zone.style.left='8%'; zone.style.width='84%'; } else zone.style.display='none';
 }
+function logRadarPass(r,kind,speed=currentSpeed,extra=''){
+  if(!r||loggedRadarIds.has(r.id)) return;
+  loggedRadarIds.add(r.id);
+  tripRadarLog.push({time:Date.now(),id:r.id,type:kind,ref:r.ref||'',name:r.name||'',limit:r.limit||null,speed:Math.round(speed||0),average:extra||''});
+  localStorage.setItem('sg_trip_radar_log',JSON.stringify(tripRadarLog));
+}
+function showTripSummary(){
+  const modal=document.getElementById('tripSummaryModal'),rows=document.getElementById('tripSummaryRows'),sub=document.getElementById('tripSummarySub'); if(!modal||!rows)return;
+  sub.textContent=`${tripRadarLog.length} radar(s) registrat(s) · ${new Date(tripStartedAt).toLocaleTimeString()} → ${new Date().toLocaleTimeString()}`;
+  rows.innerHTML=tripRadarLog.length?tripRadarLog.map(x=>`<div class="trip-row"><div><div class="rname">${x.type==='fixed'?'⚠ RADAR FIX':'📡 RADAR DE TRAM'} ${x.ref||x.name||''}</div><div class="rmeta">${new Date(x.time).toLocaleTimeString()} · límit ${x.limit||'—'} km/h${x.average?` · ${x.average}`:''}</div></div><div class="rspeed">${x.speed}</div><div>km/h</div></div>`).join(''):'<div class="trip-summary-sub">No s’ha registrat cap radar.</div>';
+  modal.classList.add('visible');
+}
+function closeTripSummary(){document.getElementById('tripSummaryModal')?.classList.remove('visible');}
+function startNewTrip(){tripStartedAt=Date.now();tripRadarLog=[];loggedRadarIds=new Set();localStorage.removeItem('sg_trip_radar_log');}
+
 function checkRadarProximity(){
   if(lastLat===null||lastLon===null)return;
+  for(const [id,until] of completedAverageRadars) if(until<=Date.now()) completedAverageRadars.delete(id);
   updateNearestRadarHUD();
   const now=Date.now(), maxD=Math.max(100,Number(alertSettings.distanceM)||1000)/1000;
   const mobileZone=updateMobileZoneHUD();
@@ -1364,24 +1385,21 @@ function checkRadarProximity(){
   const av=alertSettings.average ? radarDetection.average.map(r=>({...r,d:distanceToRadar(r)})).filter(r=>r.d<Math.max(1.5,maxD/1000)&&radarDirectionOK(r)).sort((a,b)=>a.d-b.d)[0] : null;
   if(av){
     radarDetection.activeAverageId=av.id;
-    const completedAt=radarDetection.completedAverage.get(av.id)||0;
-    const canRestart=now-completedAt>RADAR_COMPLETION_COOLDOWN_MS;
-    const progress=routeProgressForRadar(av)||0;
-    const inside=progress>0.02 && progress<0.98;
-    if(!segmentRadar.active && canRestart && (av.d<.35 || inside)) { autoStartAverageRadar(av); return; }
-    if(!segmentRadar.active&&canRestart&&av.d<maxD/1000&&now-radarDetection.lastAlertAt>20000){
+    if(!segmentRadar.active&&av.d<.35&&!completedAverageRadars.has(av.id)){autoStartAverageRadar(av);}
+    if(!segmentRadar.active&&av.d<maxD/1000&&now-radarDetection.lastAlertAt>20000){
       radarDetection.lastAlertAt=now;
       showRadarAlert(T().avg(Math.round(av.d*1000),av.limit),'average');
       speakRadar(T().avgVoice(Math.round(av.d*1000),av.limit)); updateRouteHUD(av);
     }
-  } else {
-    radarDetection.activeAverageId=null;
   }
-  const fx=alertSettings.fixed ? radarDetection.fixed.map(r=>({...r,d:distanceToRadar(r)})).filter(r=>r.d<maxD/1000).sort((a,b)=>a.d-b.d)[0] : null;
-  if(fx&&now-radarDetection.lastAlertAt>20000){
-    radarDetection.lastAlertAt=now;
-    showRadarAlert(T().fixed(Math.round(fx.d*1000),fx.limit),'fixed');
-    speakRadar(T().fixedVoice(Math.round(fx.d*1000),fx.limit)); updateRouteHUD(fx);
+  const fx=alertSettings.fixed ? radarDetection.fixed.map(r=>({...r,d:distanceToRadar(r)})).filter(r=>r.d<maxD/1000).filter(r=>{if(!Number.isFinite(currentHeading)||currentSpeed<15)return true;const b=bearingDeg(lastLat,lastLon,r.lat,r.lon);return angleDiff(currentHeading,b)<=75}).sort((a,b)=>a.d-b.d)[0] : null;
+  if(fx){
+    if(fx.d<=0.08) logRadarPass(fx,'fixed',currentSpeed);
+    if(now-radarDetection.lastAlertAt>20000){
+      radarDetection.lastAlertAt=now;
+      showRadarAlert(T().fixed(Math.round(fx.d*1000),fx.limit),'fixed');
+      speakRadar(T().fixedVoice(Math.round(fx.d*1000),fx.limit)); updateRouteHUD(fx);
+    }
   }
 }
 
@@ -1452,25 +1470,13 @@ function updateSegmentRadarPosition(lat, lon) {
   checkRadarProximity();
   if (segmentRadar.distanceKm >= segmentRadar.totalKm) {
     const wasAuto = !!segmentRadar.auto;
+    if (wasAuto) { const ar=radarDetection.average.find(x=>x.id===segmentRadar.id); const rec=tripRadarLog.find(x=>x.id===segmentRadar.id); if(rec) rec.average=`mitjana ${document.getElementById('drhAverage')?.textContent||'—'} km/h`; else logRadarPass(ar,'average',segmentRadar.entrySpeed||currentSpeed,`mitjana ${document.getElementById('drhAverage')?.textContent||'—'} km/h`); localStorage.setItem('sg_trip_radar_log',JSON.stringify(tripRadarLog)); completedAverageRadars.set(segmentRadar.id,Date.now()+10*60*1000); }
     segmentRadar.completed = true;
-    const completedId = segmentRadar.id;
-    if (wasAuto && completedId) radarDetection.completedAverage.set(completedId, Date.now());
     stopSegmentRadar();
     document.getElementById('segmentState').textContent = 'TRAM COMPLETAT';
     showRadarAlert(T().complete,'average');
     if(wasAuto) speakRadar(T().completeVoice);
     showToast('✓ Radar de tram completat');
-    // Reset the automatic tracker so the next average-speed radar can start cleanly.
-    if (wasAuto ) {
-      setTimeout(()=>{
-        if(!segmentRadar.active && segmentRadar.id===completedId){
-          segmentRadar={active:false,auto:false,totalKm:0,limitKmh:0,distanceKm:0,startTime:0,lastLat,lastLon,completed:false};
-          radarDetection.activeAverageId=null;
-          document.getElementById('drhLive')?.style.setProperty('display','none');
-          document.getElementById('drhRoute')?.classList.remove('visible');
-        }
-      },1200);
-    }
   }
 }
 
@@ -1804,7 +1810,7 @@ setInterval(() => {
 </script>
 <script>
 if ("serviceWorker" in navigator) {
-  // SpeedGuard V15 — force Service Worker refresh and recover from stale V1-V13 caches
+  // SpeedGuard V20 — force Service Worker refresh and recover from stale V1-V13 caches
   if ('serviceWorker' in navigator) {
     let sgReloadedAfterUpdate = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
@@ -1812,9 +1818,9 @@ if ("serviceWorker" in navigator) {
       sgReloadedAfterUpdate = true;
       window.location.reload();
     });
-    navigator.serviceWorker.register('./sw.js?v=18', { updateViaCache: 'none' })
+    navigator.serviceWorker.register('./sw.js?v=20', { updateViaCache: 'none' })
       .then(reg => {
-        console.log('SpeedGuard SW V19 registered', reg);
+        console.log('SpeedGuard SW V20 registered', reg);
         reg.update().catch(() => {});
       })
       .catch(e => console.warn('SW err', e));
