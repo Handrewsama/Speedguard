@@ -596,7 +596,7 @@
   <div id="titleBar">
     <div class="tb-left">
       <div class="tb-dot" id="statusDot"></div>
-      <span class="tb-title">SPEEDGUARD <span class="app-version">V17</span></span>
+      <span class="tb-title">SPEEDGUARD <span class="app-version">V18</span></span>
     </div>
     <div class="tb-actions">
       <button class="tb-btn" id="minimizeBtn" title="Minimizar">_</button>
@@ -993,6 +993,24 @@ function saveSancionesStorage(data) {
 //  DRIVING MODE
 // ══════════════════════════════════════════════════════════════════
 let drivingMode = localStorage.getItem('sg_driving_mode') === '1';
+let sgWakeLock = null;
+async function requestScreenWakeLock(){
+  if(!('wakeLock' in navigator)) return false;
+  try{
+    if(sgWakeLock && !sgWakeLock.released) return true;
+    sgWakeLock = await navigator.wakeLock.request('screen');
+    sgWakeLock.addEventListener('release',()=>{ sgWakeLock=null; });
+    return true;
+  }catch(e){ console.warn('SpeedGuard Wake Lock:',e); sgWakeLock=null; return false; }
+}
+async function releaseScreenWakeLock(){
+  if(!sgWakeLock) return;
+  try{ await sgWakeLock.release(); }catch{}
+  sgWakeLock=null;
+}
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible' && drivingMode) requestScreenWakeLock();
+});
 function applyDrivingMode() {
   document.body.classList.toggle('driving-mode', drivingMode);
   const btn = document.getElementById('driveModeBtn');
@@ -1000,11 +1018,16 @@ function applyDrivingMode() {
   if (btn) { btn.textContent = drivingMode ? '✓ MODO CONDUCCIÓN ACTIVO' : '🚗 ACTIVAR MODO CONDUCCIÓN'; btn.classList.toggle('active', drivingMode); }
   if (status) status.textContent = drivingMode ? 'VIGILANDO' : 'LISTO';
 }
-function exitDrivingMode(){ drivingMode=false; localStorage.setItem('sg_driving_mode','0'); applyDrivingMode(); const mc=document.getElementById('mainContent'); if(mc) mc.scrollTop=0; }
+async function exitDrivingMode(){ drivingMode=false; localStorage.setItem('sg_driving_mode','0'); await releaseScreenWakeLock(); applyDrivingMode(); const mc=document.getElementById('mainContent'); if(mc) mc.scrollTop=0; }
 async function toggleDrivingMode() {
   drivingMode = !drivingMode;
   localStorage.setItem('sg_driving_mode', drivingMode ? '1' : '0');
-  if (drivingMode) await enableDeviceCompass();
+  if (drivingMode) {
+    await enableDeviceCompass();
+    await requestScreenWakeLock();
+  } else {
+    await releaseScreenWakeLock();
+  }
   applyDrivingMode();
   // Put the speed display back at the top when entering driving mode.
   const mc = document.getElementById('mainContent');
@@ -1749,9 +1772,9 @@ if ("serviceWorker" in navigator) {
       sgReloadedAfterUpdate = true;
       window.location.reload();
     });
-    navigator.serviceWorker.register('./sw.js?v=15', { updateViaCache: 'none' })
+    navigator.serviceWorker.register('./sw.js?v=18', { updateViaCache: 'none' })
       .then(reg => {
-        console.log('SpeedGuard SW V15 registered', reg);
+        console.log('SpeedGuard SW V18 registered', reg);
         reg.update().catch(() => {});
       })
       .catch(e => console.warn('SW err', e));
