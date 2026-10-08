@@ -580,7 +580,7 @@
   <div id="titleBar">
     <div class="tb-left">
       <div class="tb-dot" id="statusDot"></div>
-      <span class="tb-title">SPEEDGUARD <span class="app-version">V13</span></span>
+      <span class="tb-title">SPEEDGUARD <span class="app-version">V14</span></span>
     </div>
     <div class="tb-actions">
       <button class="tb-btn" id="minimizeBtn" title="Minimizar">_</button>
@@ -1627,7 +1627,21 @@ setInterval(() => {
 </script>
 <script>
 if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("./sw.js").then(r => console.log("SW ok", r)).catch(e => console.warn("SW err", e));
+  // SpeedGuard V14 — force Service Worker refresh and recover from stale V1-V13 caches
+  if ('serviceWorker' in navigator) {
+    let sgReloadedAfterUpdate = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (sgReloadedAfterUpdate) return;
+      sgReloadedAfterUpdate = true;
+      window.location.reload();
+    });
+    navigator.serviceWorker.register('./sw.js?v=14', { updateViaCache: 'none' })
+      .then(reg => {
+        console.log('SpeedGuard SW V14 registered', reg);
+        reg.update().catch(() => {});
+      })
+      .catch(e => console.warn('SW err', e));
+  }
 }
 </script>
 </body>
