@@ -441,6 +441,8 @@
     .compass-radar-marker.fixed{color:#ffe56d}.compass-radar-marker.average{color:#8adfff}
     .compass-radar-marker .radar-distance{position:absolute;top:19px;left:50%;transform:translateX(-50%);font:900 10px/1.1 'Share Tech Mono',monospace;white-space:nowrap;color:#fff;background:rgba(0,0,0,.88);border:1px solid rgba(255,255,255,.28);border-radius:5px;padding:3px 4px;letter-spacing:-.3px;pointer-events:none}
     .compass-radar-marker.fixed .radar-distance{border-color:#ffe56d}.compass-radar-marker.average .radar-distance{border-color:#8adfff}
+    .compass-radar-marker.cluster-left .radar-distance{left:0;transform:translateX(-12%)}
+    .compass-radar-marker.cluster-right .radar-distance{left:100%;transform:translateX(-88%)}
     .ribbon-legend{display:flex;justify-content:space-around;align-items:center;gap:4px;padding:6px 4px 0;font:800 10px 'Rajdhani',sans-serif;color:#9fb0b2}
     .ribbon-legend span{display:flex;align-items:center;justify-content:center;gap:4px;flex:1;min-width:0;text-align:center;white-space:nowrap}
     .ribbon-legend .legend-icon{font-size:17px;line-height:1}
@@ -635,7 +637,7 @@ body.driving-mode #drivingRadarHUD{display:block}
   <div id="titleBar">
     <div class="tb-left">
       <div class="tb-dot" id="statusDot"></div>
-      <img class="tb-logo" src="logo-mark.png" alt="" aria-hidden="true"><span class="tb-title">SPEEDGUARD <span class="app-version">V32</span></span>
+      <img class="tb-logo" src="logo-mark.png" alt="" aria-hidden="true"><span class="tb-title">SPEEDGUARD <span class="app-version">V33</span></span>
     </div>
     <div class="tb-actions">
       <button class="tb-btn" id="minimizeBtn" title="Minimizar">_</button>
@@ -940,7 +942,12 @@ function translateInterface(root=document) {
   root.querySelectorAll('*').forEach(el=>{
     if(el.children.length===0 && el.textContent.trim()){
       if(!el.dataset.i18nOriginal) el.dataset.i18nOriginal=el.textContent;
-      const original=el.dataset.i18nOriginal.trim();
+      let original=el.dataset.i18nOriginal.trim();
+      // If JS has replaced a label's content dynamically, remember the new source text.
+      const previousCa=SG_I18N.ca[original], previousEs=SG_I18N.es[original];
+      if(el.textContent.trim()!==original && el.textContent.trim()!==previousCa && el.textContent.trim()!==previousEs){
+        el.dataset.i18nOriginal=el.textContent;original=el.textContent.trim();
+      }
       const translated=dict[original];
       if(translated && el.textContent!==translated) el.textContent=translated;
       else if(!translated && interfaceLanguage==='ca' && el.dataset.i18nOriginal) { /* Catalan is the source language; preserve unknown labels */ }
@@ -959,8 +966,18 @@ function translateInterface(root=document) {
 }
 function setInterfaceLanguage(lang){interfaceLanguage=lang==='es'?'es':'ca';localStorage.setItem('sg_interface_language',interfaceLanguage);translateInterface();}
 document.addEventListener('DOMContentLoaded',()=>{const sel=document.getElementById('interfaceLanguage');if(sel){sel.value=interfaceLanguage;sel.addEventListener('change',()=>setInterfaceLanguage(sel.value));}translateInterface();});
-const sgTranslationObserver=new MutationObserver(mutations=>{if(mutations.some(m=>Array.from(m.addedNodes).some(n=>n.nodeType===1)))translateInterface();});
-sgTranslationObserver.observe(document.documentElement,{childList:true,subtree:true});
+// Translate dynamically updated text too (status labels, radar messages, trip summaries).
+let sgTranslating=false, sgTranslateQueued=false;
+function queueDynamicTranslation(){
+  if(sgTranslating||sgTranslateQueued)return;
+  sgTranslateQueued=true;
+  queueMicrotask(()=>{sgTranslateQueued=false;if(sgTranslating)return;sgTranslating=true;try{translateInterface();}finally{sgTranslating=false;}});
+}
+const sgTranslationObserver=new MutationObserver(mutations=>{
+  if(sgTranslating)return;
+  if(mutations.some(m=>m.type==='characterData'||m.type==='childList'))queueDynamicTranslation();
+});
+sgTranslationObserver.observe(document.documentElement,{childList:true,subtree:true,characterData:true});
 // ══════════════════════════════════════════════════════════════════
 //  DEFAULT SANCIONES (legislación española RDL 6/2015 + Ley 18/2021)
 // ══════════════════════════════════════════════════════════════════
@@ -1220,7 +1237,16 @@ function updateCompassRibbon(){
   dirs.forEach(([id,bearing])=>{const el=document.getElementById(id);if(!el)return;let rel=Number.isFinite(heading)?relativeAngle(bearing,heading):bearing;el.style.left=(50+(rel/180)*46)+'%';});
   const fixed=alertSettings.fixed?closestRadarOfType(radarDetection.fixed,'fixed'):null;
   const average=alertSettings.average?closestRadarOfType(radarDetection.average,'average'):null;
+  const fixedEl=document.getElementById('compassFixedMarker'), averageEl=document.getElementById('compassAverageMarker');
   setCompassMarker('compassFixedMarker',fixed,heading);setCompassMarker('compassAverageMarker',average,heading);
+  // If both radar types point to nearly the same bearing, fan them out horizontally.
+  if(fixedEl&&averageEl){
+    fixedEl.classList.remove('cluster-left');averageEl.classList.remove('cluster-right');
+    if(fixedEl.classList.contains('active')&&averageEl.classList.contains('active')){
+      const fx=parseFloat(fixedEl.style.left)||50, ax=parseFloat(averageEl.style.left)||50;
+      if(Math.abs(fx-ax)<9){const mid=(fx+ax)/2;fixedEl.style.left=Math.max(7,mid-4.5)+'%';averageEl.style.left=Math.min(93,mid+4.5)+'%';fixedEl.classList.add('cluster-left');averageEl.classList.add('cluster-right');}
+    }
+  }
   const mobile=getSctMobileZone()&&alertSettings.mobileZones;
   document.getElementById('legendFixed')?.classList.toggle('active',!!fixed);
   document.getElementById('legendAverage')?.classList.toggle('active',!!average);
