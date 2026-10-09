@@ -420,6 +420,7 @@
     }
 
     
+    .nav-tab.trip-finish{color:#fff;background:#9d3028;border-color:#ff6b5f;box-shadow:0 0 10px rgba(255,70,60,.22)}
     .road-confidence{font-size:10px;font-weight:900;letter-spacing:.4px;padding:5px 8px;border-radius:6px;margin-top:5px;background:rgba(255,149,0,.12);color:#ffbf69}
     .road-confidence.ok{background:rgba(0,255,136,.10);color:#00ff88}
     .road-confidence.warn{background:rgba(255,229,0,.12);color:#ffe500}
@@ -465,7 +466,7 @@
     #drivingRadarHUD .drh-warning{text-align:center;font-size:9px;font-weight:800;letter-spacing:.5px;margin-top:5px;min-height:11px}
     body.driving-mode #driveModeBtn,body.driving-mode #driveStatus{display:none}
     #exitDriveBtn{display:none;position:fixed;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:2147483646;width:auto;max-width:190px;min-height:34px;padding:7px 11px;border-radius:9px;border:1px solid rgba(255,255,255,.24);background:rgba(5,12,12,.88);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:#eafcff;font:800 10px 'Rajdhani',sans-serif;letter-spacing:1px;box-shadow:0 4px 18px rgba(0,0,0,.35);pointer-events:auto;touch-action:manipulation}
-    body.driving-mode #exitDriveBtn{display:block}
+    body.driving-mode #exitDriveBtn{display:none}
     #drhRoute{display:none;padding:7px 9px 8px;border-top:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.12)}
     #drhRoute.visible{display:block}
     .route-head{display:flex;justify-content:space-between;align-items:center;font:800 9px 'Rajdhani',sans-serif;letter-spacing:1px;color:#aeb8bb;margin-bottom:5px}
@@ -634,7 +635,7 @@ body.driving-mode #drivingRadarHUD{display:block}
   <div id="titleBar">
     <div class="tb-left">
       <div class="tb-dot" id="statusDot"></div>
-      <img class="tb-logo" src="logo-mark.png" alt="" aria-hidden="true"><span class="tb-title">SPEEDGUARD <span class="app-version">AUTO</span></span>
+      <img class="tb-logo" src="logo-mark.png" alt="" aria-hidden="true"><span class="tb-title">SPEEDGUARD <span class="app-version">V32</span></span>
     </div>
     <div class="tb-actions">
       <button class="tb-btn" id="minimizeBtn" title="Minimizar">_</button>
@@ -660,7 +661,7 @@ body.driving-mode #drivingRadarHUD{display:block}
       <div class="drh-compass-dial" id="drhCompassDial" aria-hidden="true" style="display:none"><div class="drh-heading">—</div><div class="drh-arrow" id="drhArrow">▲</div></div>
       <div class="direction-ribbon-foot" style="display:none"><span id="drhRelativeDirection">RADAR: —</span><strong id="drhRadarType">BUSCANT RADAR</strong><strong id="drhRadarDistance">—</strong><span id="drhRadarLimit">— km/h</span></div>
     </div>
-    <button id="exitDriveBtn" type="button" onclick="exitDrivingMode()">⏹ SALIR DEL MODO CONDUCCIÓN</button>
+    <button id="exitDriveBtn" type="button" onclick="exitDrivingMode()" aria-hidden="true" tabindex="-1">⏹ FINALITZAR TRAJECTE</button>
     <div class="drh-alert" id="drhAlert">📡 ESCANEJANT RADARS…</div>
     <div id="drhRoute">
       <div class="route-head"><span id="drhRouteTitle">RECORRIDO DE CONTROL</span><span id="drhRouteStatus">—</span></div>
@@ -797,7 +798,14 @@ body.driving-mode #drivingRadarHUD{display:block}
 
     <!-- ── EDITOR SCREEN ── -->
     <div id="editorScreen" class="screen">
-      <div class="section-title">SANCIONES EDITABLES</div>
+      <div class="halo-settings" id="interfaceLanguagePanel">
+        <div class="section-title" data-i18n="interfaceLanguageTitle">🌐 IDIOMA DE LA INTERFÍCIE</div>
+        <div class="halo-setting"><div class="halo-setting-head"><strong data-i18n="interfaceLanguageLabel">Idioma de l’aplicació</strong><span id="interfaceLanguageValue">Català</span></div>
+          <select id="interfaceLanguage" aria-label="Idioma de la interfície" style="width:100%;margin-top:5px;padding:8px;border-radius:8px;background:#0b0b12;color:#eafcff;border:1px solid #29293a;font-size:12px"><option value="ca">Català</option><option value="es">Español</option></select>
+        </div>
+        <div style="font-size:10px;color:var(--muted);margin-top:6px" data-i18n="languageHelp">Canvia l’idioma dels menús i textos de l’aplicació. Es desa automàticament.</div>
+      </div>
+      <div class="section-title" data-i18n="editableFines">SANCIONES EDITABLES</div>
 
       <div id="sancionesEditorList"></div>
 
@@ -870,30 +878,16 @@ body.driving-mode #drivingRadarHUD{display:block}
       </div>
     </div><!-- /editorScreen -->
 
-    <!-- ── INFO SCREEN ── -->
+    <!-- ── TRIPS SCREEN (replaces unused INFO tab) ── -->
     <div id="infoScreen" class="screen">
       <div class="info-block">
-        <h3>📡 GPS + OpenStreetMap</h3>
-        <p>Esta app usa el GPS de tu dispositivo y consulta los límites de velocidad de <strong>OpenStreetMap</strong> (Overpass API) en tiempo real. La API es 100% gratuita y sin límites de uso.<br><br>
-        Pulsa <strong>🗺 OSM</strong> para forzar una consulta del límite de la vía donde estás.</p>
+        <h3>🧾 VIATGES I HISTORIAL</h3>
+        <p>Consulta els trajectes desats en aquest dispositiu. En mode conducció, aquesta pestanya es converteix en el botó per finalitzar el trajecte i mostrar-ne el resum.</p>
       </div>
-      <div class="info-block">
-        <h3>📲 Cómo instalar como APK</h3>
-        <ul>
-          <li>Opción A — Chrome Android: menú ⋮ → <em>Añadir a pantalla de inicio</em></li>
-          <li>Opción B — APK real: sube estos archivos a <strong>GitHub Pages</strong> (gratis) y usa <strong>PWABuilder.com</strong> para generar el .apk</li>
-          <li>Opción C — App directo: usa <strong>WebIntoApp.com</strong> con la URL de tu GitHub Pages</li>
-        </ul>
-      </div>
-      <div class="info-block">
-        <h3>🪟 Ventana flotante</h3>
-        <p>La ventana es <strong>arrastrable</strong> (toca el título) y <strong>redimensionable</strong> (arrastra la esquina inferior derecha).<br><br>
-        En Android, para que se superponga a Google Maps o Waze, ve a <em>Ajustes → Aplicaciones → SpeedGuard → Permisos → Aparecer encima de otras apps</em>.</p>
-      </div>
-      <div class="info-block">
-        <h3>⚖️ Aviso legal</h3>
-        <p>Información orientativa. Basado en RDL 6/2015 y Ley 18/2021. No sustituye el criterio de un abogado. Las multas exactas pueden variar según el agente, comunidad autónoma y circunstancias.</p>
-      </div>
+      <div id="tripArchiveList" class="info-block" aria-live="polite"><p>Carregant historial…</p></div>
+      <button type="button" class="trip-close" onclick="openLatestTrip()">OBRIR L'ÚLTIM RESUM</button>
+      <button type="button" class="trip-close" onclick="renderTripArchive()">ACTUALITZAR HISTORIAL</button>
+      <div class="info-block"><h3>ℹ️ SOBRE LES DADES</h3><p>Els trajectes es desen localment en aquest navegador. Si esborres les dades del lloc web, es poden perdre. Les dades de radars i GPS són orientatives i poden ser incompletes.</p></div>
     </div><!-- /infoScreen -->
 
   </div><!-- /mainContent -->
@@ -914,13 +908,59 @@ body.driving-mode #drivingRadarHUD{display:block}
   <div class="nav-tabs">
     <button class="nav-tab active" id="tab-speed"  onclick="showScreen('speed')">🚗 RADAR</button>
     <button class="nav-tab"        id="tab-editor" onclick="showScreen('editor')">⚙ EDITAR</button>
-    <button class="nav-tab"        id="tab-info"   onclick="showScreen('info')">ℹ INFO</button>
+    <button class="nav-tab" id="tab-info" onclick="handleTripTab()">🧾 VIATGE</button>
   </div>
 
   <div class="resize-hint"></div>
 </div><!-- /floatWindow -->
 
 <script>
+// ══════════════════════════════════════════════════════════════════
+// INTERFACE LANGUAGE (Català / Español), persisted locally
+// ══════════════════════════════════════════════════════════════════
+const SG_I18N = {
+  ca: {
+    interfaceLanguageTitle:'🌐 IDIOMA DE LA INTERFÍCIE', interfaceLanguageLabel:'Idioma de l’aplicació', languageHelp:'Canvia l’idioma dels menús i textos de l’aplicació. Es desa automàticament.', editableFines:'SANCIONS EDITABLES',
+    'Minimizar':'Minimitzar','Siempre visible':'Sempre visible','RUMB':'RUMB','Radar fix':'Radar fix','Radar de tram':'Radar de tram','Possible mòbil':'Possible mòbil','RECORRIDO DE CONTROL':'RECORREGUT DE CONTROL','INICIO':'INICI','CONTROL':'CONTROL','FIN':'FINAL','ACTUAL':'ACTUAL','MITJANA':'MITJANA','VIA NO DETECTADA':'VIA NO DETECTADA','Esperant GPS…':'Esperant GPS…','CONFIANÇA VIA: ESPERANT':'FIABILITAT DE LA VIA: ESPERANT',
+    'RESUM DEL VIATGE':'RESUM DEL VIATGE','Radars detectats durant el viatge':'Radars detectats durant el trajecte','CONSULTAR VIATGES ANTERIORS':'CONSULTAR VIATGES ANTERIORS','TANCAR':'TANCAR','🚗 ACTIVAR MODO CONDUCCIÓN':'🚗 ACTIVAR MODE CONDUCCIÓ','ESTADO':'ESTAT','Manual':'Manual','Velocidad manual':'Velocitat manual','📷 Actualitzar radars':'📷 Actualitzar radars','🗺 Actualitzar base de dades':'🗺 Actualitzar base de dades','📡 Forçar connexió GPS':'📡 Forçar connexió GPS','Actualitzacions manuals disponibles':'Actualitzacions manuals disponibles','VÍA ACTUAL':'VIA ACTUAL','VELOCITAT ACTUAL':'VELOCITAT ACTUAL','VELOCITAT MITJANA':'VELOCITAT MITJANA',
+    'SANCIONES EDITABLES':'SANCIONS EDITABLES','💾 GUARDAR CAMBIOS':'💾 DESAR CANVIS','↺ Restaurar por defecto':'↺ Restaurar valors per defecte','💡 IL·LUMINACIÓ DEL MARC':'💡 IL·LUMINACIÓ DEL MARC','Gruix':'Gruix','Brillantor':'Brillantor','Degradat cap al centre':'Degradat cap al centre','Intensitat del feix':'Intensitat del feix','Velocitat del moviment':'Velocitat del moviment','Discret':'Discret','Normal':'Normal','Intens':'Intens','↺ Restaurar il·luminació':'↺ Restaurar il·luminació','🎯 CALIBRATGE DE VELOCITAT':'🎯 CALIBRATGE DE VELOCITAT','Ajusta la velocitat que mostra SpeedGuard perquè coincideixi amb la velocitat real del vehicle.':'Ajusta la velocitat que mostra SpeedGuard perquè coincideixi amb la velocitat real del vehicle.','Corrección fija':'Correcció fixa','Corrección porcentual':'Correcció percentual','Ejemplo en tiempo real':'Exemple en temps real','↺ Restaurar calibratge':'↺ Restaurar calibratge','🔔 CONFIGURACIÓN DE ALERTAS':'🔔 CONFIGURACIÓ D’ALERTES','Idioma dels avisos':'Idioma dels avisos','Radars fixos':'Radars fixos','Radars de tram':'Radars de tram','Vigilància mòbil':'Vigilància mòbil','Alerta de veu':'Alerta de veu','Alerta visual':'Alerta visual','Avís abans del radar':'Avís abans del radar','🔔 Provar alerta':'🔔 Provar alerta','↺ Restaurar':'↺ Restaurar','↻ RECUPERAR RADARS':'↻ RECUPERAR RADARS','FUENTE OFICIAL':'FONTS OFICIALS','DESCUENTOS POR PRONTO PAGO':'DESCOMPTES PER PAGAMENT ANTICIPAT',
+    '🧾 VIATGES I HISTORIAL':'🧾 VIATGES I HISTORIAL','Consulta els trajectes desats en aquest dispositiu. En mode conducció, aquesta pestanya es converteix en el botó per finalitzar el trajecte i mostrar-ne el resum.':'Consulta els trajectes desats en aquest dispositiu. En mode conducció, aquesta pestanya es converteix en el botó per finalitzar el trajecte i mostrar-ne el resum.','OBRIR L’ÚLTIM RESUM':'OBRIR L’ÚLTIM RESUM','ACTUALITZAR HISTORIAL':'ACTUALITZAR HISTORIAL','ℹ️ SOBRE LES DADES':'ℹ️ SOBRE LES DADES','🚗 RADAR':'🚗 RADAR','⚙ EDITAR':'⚙ EDITAR','🧾 VIATGE':'🧾 VIATGES','⏹ FINALITZAR':'⏹ FINALITZAR','🧾 VIATGES':'🧾 VIATGES'
+  },
+  es: {
+    interfaceLanguageTitle:'🌐 IDIOMA DE LA INTERFAZ', interfaceLanguageLabel:'Idioma de la aplicación', languageHelp:'Cambia el idioma de los menús y textos de la aplicación. Se guarda automáticamente.', editableFines:'SANCIONES EDITABLES',
+    'Minimitzar':'Minimizar','Sempre visible':'Siempre visible','RUMB':'RUMBO','Radar fix':'Radar fijo','Radar de tram':'Radar de tramo','Possible mòbil':'Posible móvil','RECORREGUT DE CONTROL':'RECORRIDO DE CONTROL','INICI':'INICIO','FINAL':'FIN','FIABILITAT DE LA VIA: ESPERANT':'FIABILIDAD DE LA VÍA: ESPERANDO',
+    'RESUM DEL VIATGE':'RESUMEN DEL VIAJE','Radars detectats durant el trajecte':'Radares detectados durante el viaje','CONSULTAR VIATGES ANTERIORS':'CONSULTAR VIAJES ANTERIORES','TANCAR':'CERRAR','🚗 ACTIVAR MODE CONDUCCIÓ':'🚗 ACTIVAR MODO CONDUCCIÓN','ESTAT':'ESTADO','Velocitat manual':'Velocidad manual','📷 Actualitzar radars':'📷 Actualizar radares','🗺 Actualitzar base de dades':'🗺 Actualizar base de datos','📡 Forçar connexió GPS':'📡 Forzar conexión GPS','VIA ACTUAL':'VÍA ACTUAL','FIABILITAT DE LA VIA':'FIABILIDAD DE LA VÍA',
+    'SANCIONS EDITABLES':'SANCIONES EDITABLES','💾 DESAR CANVIS':'💾 GUARDAR CAMBIOS','↺ Restaurar valors per defecte':'↺ Restaurar por defecto','💡 IL·LUMINACIÓ DEL MARC':'💡 ILUMINACIÓN DEL MARCO','Gruix':'Grosor','Brillantor':'Brillo','Degradat cap al centre':'Degradado hacia el centro','Intensitat del feix':'Intensidad del haz','Velocitat del moviment':'Velocidad del movimiento','Discret':'Discreto','Intens':'Intenso','↺ Restaurar il·luminació':'↺ Restaurar iluminación','🎯 CALIBRATGE DE VELOCITAT':'🎯 CALIBRACIÓN DE VELOCIDAD','Ajusta la velocitat que mostra SpeedGuard perquè coincideixi amb la velocitat real del vehicle.':'Ajusta la velocidad que muestra SpeedGuard para que coincida con la velocidad real del vehículo.','Correcció fixa':'Corrección fija','Correcció percentual':'Corrección porcentual','Exemple en temps real':'Ejemplo en tiempo real','↺ Restaurar calibratge':'↺ Restaurar calibración','🔔 CONFIGURACIÓ D’ALERTES':'🔔 CONFIGURACIÓN DE ALERTAS','Idioma dels avisos':'Idioma de los avisos','Radars fixos':'Radares fijos','Radars de tram':'Radares de tramo','Vigilància mòbil':'Vigilancia móvil','Alerta de veu':'Alerta de voz','Alerta visual':'Alerta visual','Avís abans del radar':'Aviso antes del radar','🔔 Provar alerta':'🔔 Probar alerta','↺ Restaurar':'↺ Restaurar','↻ RECUPERAR RADARS':'↻ RECUPERAR RADARES','FUENTE OFICIAL':'FUENTE OFICIAL','DESCOMPTES PER PAGAMENT ANTICIPAT':'DESCUENTOS POR PRONTO PAGO',
+    '🧾 VIATGES I HISTORIAL':'🧾 VIAJES E HISTORIAL','Consulta els trajectes desats en aquest dispositiu. En mode conducció, aquesta pestanya es converteix en el botó per finalitzar el trajecte i mostrar-ne el resum.':'Consulta los viajes guardados en este dispositivo. En modo conducción, esta pestaña se convierte en el botón para finalizar el viaje y mostrar su resumen.','OBRIR L’ÚLTIM RESUM':'ABRIR EL ÚLTIMO RESUMEN','ACTUALITZAR HISTORIAL':'ACTUALIZAR HISTORIAL','ℹ️ SOBRE LES DADES':'ℹ️ SOBRE LOS DATOS','🚗 RADAR':'🚗 RADAR','⚙ EDITAR':'⚙ AJUSTES','🧾 VIATGE':'🧾 VIAJES','🧾 VIATGES':'🧾 VIAJES','⏹ FINALITZAR':'⏹ FINALIZAR'
+  }
+};
+let interfaceLanguage = localStorage.getItem('sg_interface_language') || 'ca';
+function translateInterface(root=document) {
+  const dict=SG_I18N[interfaceLanguage]||SG_I18N.ca;
+  root.querySelectorAll('*').forEach(el=>{
+    if(el.children.length===0 && el.textContent.trim()){
+      if(!el.dataset.i18nOriginal) el.dataset.i18nOriginal=el.textContent;
+      const original=el.dataset.i18nOriginal.trim();
+      const translated=dict[original];
+      if(translated && el.textContent!==translated) el.textContent=translated;
+      else if(!translated && interfaceLanguage==='ca' && el.dataset.i18nOriginal) { /* Catalan is the source language; preserve unknown labels */ }
+    }
+    ['title','aria-label','placeholder'].forEach(attr=>{
+      if(el.hasAttribute(attr)){
+        const key='i18n'+attr.replace(/^[a-z]/,c=>c.toUpperCase());
+        if(!el.dataset[key]) el.dataset[key]=el.getAttribute(attr);
+        const original=el.dataset[key]; if(dict[original]) el.setAttribute(attr,dict[original]);
+      }
+    });
+  });
+  root.querySelectorAll('[data-i18n]').forEach(el=>{const key=el.dataset.i18n;if(dict[key])el.textContent=dict[key];});
+  const value=document.getElementById('interfaceLanguageValue'); if(value)value.textContent=interfaceLanguage==='es'?'Español':'Català';
+  document.documentElement.lang=interfaceLanguage;
+}
+function setInterfaceLanguage(lang){interfaceLanguage=lang==='es'?'es':'ca';localStorage.setItem('sg_interface_language',interfaceLanguage);translateInterface();}
+document.addEventListener('DOMContentLoaded',()=>{const sel=document.getElementById('interfaceLanguage');if(sel){sel.value=interfaceLanguage;sel.addEventListener('change',()=>setInterfaceLanguage(sel.value));}translateInterface();});
+const sgTranslationObserver=new MutationObserver(mutations=>{if(mutations.some(m=>Array.from(m.addedNodes).some(n=>n.nodeType===1)))translateInterface();});
+sgTranslationObserver.observe(document.documentElement,{childList:true,subtree:true});
 // ══════════════════════════════════════════════════════════════════
 //  DEFAULT SANCIONES (legislación española RDL 6/2015 + Ley 18/2021)
 // ══════════════════════════════════════════════════════════════════
@@ -1108,6 +1148,8 @@ function applyDrivingMode() {
   const status = document.getElementById('driveStatusText');
   if (btn) { btn.textContent = drivingMode ? '✓ MODO CONDUCCIÓN ACTIVO' : '🚗 ACTIVAR MODO CONDUCCIÓN'; btn.classList.toggle('active', drivingMode); }
   if (status) status.textContent = drivingMode ? 'VIGILANDO' : 'LISTO';
+  const tripTab=document.getElementById('tab-info');
+  if(tripTab){tripTab.textContent=drivingMode?'⏹ FINALITZAR':'🧾 VIATGES';tripTab.title=drivingMode?'Finalitzar el trajecte i veure el resum':'Consultar historial de trajectes';tripTab.classList.toggle('trip-finish',drivingMode);}
 }
 async function exitDrivingMode(){ drivingMode=false; localStorage.setItem('sg_driving_mode','0'); await releaseScreenWakeLock(); applyDrivingMode(); const mc=document.getElementById('mainContent'); if(mc) mc.scrollTop=0; if(Date.now()-tripStartedAt>15000){saveCompletedTrip();showTripSummary();} }
 async function toggleDrivingMode() {
@@ -1214,6 +1256,19 @@ function updateNearestRadarHUD(){
 // ══════════════════════════════════════════════════════════════════
 //  NAVIGATION
 // ══════════════════════════════════════════════════════════════════
+function handleTripTab(){
+  // Single, non-overlapping navigation action: finish while driving; show archive otherwise.
+  if(drivingMode){ exitDrivingMode(); return; }
+  showScreen('info');
+  renderTripArchive();
+}
+function renderTripArchive(){
+  const el=document.getElementById('tripArchiveList'); if(!el)return;
+  const history=loadTripHistory();
+  if(!history.length){el.innerHTML='<h3>CAP VIATGE DESAT</h3><p>Quan finalitzis un trajecte de més de 15 segons, el resum es desarà aquí.</p>';return;}
+  el.innerHTML='<h3>HISTORIAL DESAT · '+history.length+'</h3>'+history.map((t,i)=>`<button type="button" class="trip-close" style="text-align:left;margin:6px 0" onclick="openSavedTrip(${i})">${new Date(t.start).toLocaleDateString()} · ${new Date(t.start).toLocaleTimeString()} · ${Math.round((t.durationSeconds||0)/60)} min · ${(t.radars||[]).length} alertes${t.distanceKm!=null?' · '+t.distanceKm+' km':''}</button>`).join('');
+}
+function openLatestTrip(){const history=loadTripHistory();if(history.length)openSavedTrip(0);else{renderTripArchive();}}
 function showScreen(name) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
