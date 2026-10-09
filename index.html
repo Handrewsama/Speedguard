@@ -603,7 +603,7 @@ body.driving-mode #drivingRadarHUD{display:block}
   <div id="titleBar">
     <div class="tb-left">
       <div class="tb-dot" id="statusDot"></div>
-      <span class="tb-title">SPEEDGUARD <span class="app-version">V20</span></span>
+      <span class="tb-title">SPEEDGUARD <span class="app-version">V21</span></span>
     </div>
     <div class="tb-actions">
       <button class="tb-btn" id="minimizeBtn" title="Minimizar">_</button>
@@ -613,18 +613,16 @@ body.driving-mode #drivingRadarHUD{display:block}
 
   <!-- Driving radar HUD: visible without scroll/touch in driving mode -->
   <div id="drivingRadarHUD" aria-live="assertive">
-    <div class="drh-compass" id="drhCompassWrap">
-      <div class="drh-compass-dial" id="drhCompassDial">
-        <span class="drh-dir n">N</span><span class="drh-dir e">E</span><span class="drh-dir s">S</span><span class="drh-dir w">W</span>
-        <span class="drh-tick t0"></span><span class="drh-tick t90"></span><span class="drh-tick t180"></span><span class="drh-tick t270"></span>
-        <div class="drh-heading">—</div>
-        <div class="drh-arrow" id="drhArrow">▲</div>
+    <div class="drh-compass" id="drhCompassWrap" aria-label="Direcció de conducció i radars propers">
+      <div class="direction-ribbon-head"><span>RUMB DE CONDUCCIÓ</span><strong id="drhDrivingDirection">—</strong><span id="drhDrivingDegrees">GPS</span></div>
+      <div class="direction-ribbon" id="directionRibbon">
+        <div class="ribbon-track"><span>N</span><span>NE</span><span>E</span><span>SE</span><span>S</span><span>SW</span><span>W</span><span>NW</span><span>N</span></div>
+        <div class="ribbon-center-mark">▼</div>
+        <div class="ribbon-radar-mark" id="ribbonRadarMark" style="display:none">📡</div>
       </div>
-      <div class="drh-radar-info">
-        <div class="drh-radar-type" id="drhRadarType">BUSCANT RADAR</div>
-        <div class="drh-radar-distance" id="drhRadarDistance">—</div>
-        <div class="drh-radar-limit" id="drhRadarLimit">— km/h</div>
-      </div>
+      <div class="direction-ribbon-foot"><span id="drhRelativeDirection">RADAR: —</span><strong id="drhRadarType">BUSCANT RADAR</strong><strong id="drhRadarDistance">—</strong><span id="drhRadarLimit">— km/h</span></div>
+      <div class="ribbon-legend"><span>▲ TU RUMB</span><span>📡 DIRECCIÓ DEL RADAR</span></div>
+      <div class="drh-compass-dial" id="drhCompassDial" aria-hidden="true" style="display:none"><div class="drh-heading">—</div><div class="drh-arrow" id="drhArrow">▲</div></div>
     </div>
     <button id="exitDriveBtn" type="button" onclick="exitDrivingMode()">⏹ SALIR DEL MODO CONDUCCIÓN</button>
     <div class="drh-alert" id="drhAlert">📡 ESCANEJANT RADARS…</div>
@@ -1099,16 +1097,23 @@ function nearestRadar(){
 function updateNearestRadarHUD(){
   const dial=document.getElementById('drhCompassDial'),arrow=document.getElementById('drhArrow'),headingEl=document.querySelector('#drhCompassDial .drh-heading');
   const typeEl=document.getElementById('drhRadarType'),distEl=document.getElementById('drhRadarDistance'),limitEl=document.getElementById('drhRadarLimit');
-  if(!dial||!arrow||!headingEl||!typeEl||!distEl||!limitEl)return;
+  if(!typeEl||!distEl||!limitEl)return;
   const radar=nearestRadar(),heading=getUsableHeading();
-  if(Number.isFinite(heading)){headingEl.textContent=Math.round(heading)+'°';dial.classList.remove('no-heading')}else{headingEl.textContent='—';dial.classList.add('no-heading')}
-  if(!radar){typeEl.textContent='BUSCANT RADAR';distEl.textContent='—';limitEl.textContent='Esperant GPS';return;}
+  const dirName=(deg)=>{if(!Number.isFinite(deg))return '—';return ['N','NE','E','SE','S','SW','W','NW'][Math.round(normalizeDeg(deg)/45)%8]};
+  const headingName=document.getElementById('drhDrivingDirection'),headingDeg=document.getElementById('drhDrivingDegrees'),relLabel=document.getElementById('drhRelativeDirection'),mark=document.getElementById('ribbonRadarMark'),track=document.querySelector('.ribbon-track');
+  if(headingName)headingName.textContent=dirName(heading);
+  if(headingDeg)headingDeg.textContent=Number.isFinite(heading)?Math.round(heading)+'°':'RUMB NO DISPONIBLE';
+  if(track&&Number.isFinite(heading))track.style.transform=`translateX(${(normalizeDeg(heading)/360)*-22}px)`;
+  if(dial&&arrow&&headingEl){if(Number.isFinite(heading)){headingEl.textContent=Math.round(heading)+'°';dial.classList.remove('no-heading')}else{headingEl.textContent='—';dial.classList.add('no-heading')}}
+  if(!radar){typeEl.textContent='BUSCANT RADAR';distEl.textContent='—';limitEl.textContent='Esperant GPS';if(relLabel)relLabel.textContent='RADAR: —';if(mark)mark.style.display='none';return;}
   const bearing=bearingDeg(lastLat,lastLon,radar.lat,radar.lon);
-  const rel=Number.isFinite(heading)?relativeAngle(bearing,heading):0;
-  arrow.style.transform=`translate(-50%,-53%) rotate(${rel}deg)`;
+  const rel=Number.isFinite(heading)?relativeAngle(bearing,heading):null;
+  if(arrow&&rel!==null)arrow.style.transform=`translate(-50%,-53%) rotate(${rel}deg)`;
   typeEl.textContent=radar.type==='average'?'📡 RADAR DE TRAM':'⚠ RADAR FIX';
   distEl.textContent=radar.d<1?(Math.round(radar.d*1000)+' m'):(radar.d.toFixed(1).replace('.',',')+' km');
   limitEl.textContent=`LÍMIT ${radar.limit||currentVia.limite} km/h`;
+  if(relLabel)relLabel.textContent=rel===null?'RADAR: DIRECCIÓ NO CONFIRMADA':`RADAR ${rel>=-22.5&&rel<=22.5?'AL DAVANT':Math.abs(rel)>157.5?'DARRERE':rel<0?'A L’ESQUERRA':'A LA DRETA'} · ${dirName(bearing)}`;
+  if(mark){mark.style.display='block';mark.style.left=(50+Math.max(-40,Math.min(40,(rel||0)/180*40)))+'%';}
 }
 
 // ══════════════════════════════════════════════════════════════════
