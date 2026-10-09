@@ -841,6 +841,8 @@ body.driving-mode #drivingRadarHUD{display:block}
         <div class="halo-setting" style="margin-top:10px"><div class="halo-setting-head"><strong>Avís abans del radar</strong><span id="alertDistanceValue">1 km</span></div><input class="halo-range" id="alertDistanceRange" type="range" min="300" max="2000" step="100" value="1000"></div>
         <div class="alert-source-note">Els radars mòbils exactes no tenen una base pública oficial amb coordenades. L’SCT publica <strong>trams oficials de vigilància mòbil</strong>. SpeedGuard els mostra com a zona de vigilància, no com a radar confirmat.</div>
         <div class="halo-preset-row"><button class="via-btn" type="button" onclick="testRadarAlert()">🔔 Provar alerta</button><button class="reset-btn" type="button" onclick="resetAlertSettings()">↺ Restaurar</button></div>
+        <button class="reset-btn" type="button" style="width:100%;margin-top:8px;border-color:#00bde8;color:#7feaff" onclick="recoverRadarSystem('manual')">↻ RECUPERAR RADARS</button>
+        <div id="radarRecoveryStatus" role="status" aria-live="polite" style="font-size:10px;color:var(--muted);margin-top:6px">Recuperació automàtica activada</div>
       </div>
 
       <div style="margin-top:12px;">
@@ -966,6 +968,9 @@ let tripDiagnosticLog=[]; const TRIP_DIAGNOSTICS_KEY='sg_trip_diagnostics_v1';
 function logTripDiagnostic(type,message,extra={}){const item={time:Date.now(),type:String(type),message:String(message),...extra};tripDiagnosticLog.push(item);if(tripDiagnosticLog.length>300)tripDiagnosticLog=tripDiagnosticLog.slice(-300);try{localStorage.setItem(TRIP_DIAGNOSTICS_KEY,JSON.stringify(tripDiagnosticLog));}catch(e){console.warn('No s’ha pogut desar el diagnòstic',e);}}
 let radarQuerying = false;
 let lastRadarQueryAt = 0;
+let lastRadarProximityCheckAt = Date.now();
+let lastRadarRecoveryAt = 0;
+let radarRecoveryBusy = false;
 
 // Alert configuration — simple, persistent and testable
 const DEFAULT_ALERT_SETTINGS = { fixed:true, average:true, mobileZones:true, voice:true, visual:true, distanceM:1000, language:'ca' };
@@ -1622,6 +1627,7 @@ function closeTripSummary(){document.getElementById('tripSummaryModal')?.classLi
 function startNewTrip(){tripStartedAt=Date.now();tripRadarLog=[];tripDiagnosticLog=[];loggedRadarIds=new Set();tripDistanceKm=0;lastTripLat=null;lastTripLon=null;try{localStorage.removeItem('sg_trip_radar_log');localStorage.removeItem(TRIP_DIAGNOSTICS_KEY)}catch{}logTripDiagnostic('trip','Trajecte iniciat');}
 
 function checkRadarProximity(){
+  lastRadarProximityCheckAt=Date.now();
   if(lastLat===null||lastLon===null)return;
   for(const [id,until] of completedAverageRadars) if(until<=Date.now()) completedAverageRadars.delete(id);
   const now=Date.now(), maxD=Math.max(100,Number(alertSettings.distanceM)||1000)/1000;
@@ -1673,6 +1679,61 @@ function checkRadarProximity(){
   }
 }
 
+
+// Recuperació local: neteja només els estats visuals/càlculs que poden quedar enganxats.
+// No esborra la base de radars, el trajecte ni els radars de tram completats.
+function recoverRadarSystem(reason='manual') {
+  const now=Date.now();
+  if(radarRecoveryBusy || (reason!=='manual' && now-lastRadarRecoveryAt<30000)) return false;
+  radarRecoveryBusy=true; lastRadarRecoveryAt=now;
+  try {
+    const oldActive=radarDetection.activeAverageId;
+    radarDetection.activeAverageId=null;
+    activeMobileZoneKey=null;
+    // Elimina només els elements d'alerta obsolets; no reinicia GPS ni dades persistents.
+    const banner=document.getElementById('autoRadarAlert'); if(banner) banner.style.display='none';
+    const hud=document.getElementById('drivingRadarHUD');
+    const live=document.getElementById('drhLive');
+    const alert=document.getElementById('drhAlert');
+    if(!segmentRadar.active && live) live.style.display='none';
+    if(!segmentRadar.active && hud) hud.classList.remove('visible','fixed','danger');
+    if(!segmentRadar.active) document.getElementById('drhRoute')?.classList.remove('visible');
+    if(alert) alert.textContent=T().scanning(radarDetection.fixed.length+radarDetection.average.length);
+    if(lastLat!==null&&lastLon!==null){
+      updateMobileZoneHUD();
+      checkRadarProximity();
+      updateNearestRadarHUD();
+      if(segmentRadar.active) { updateSegmentRadarUI(); const ar=radarDetection.average.find(x=>x.id===segmentRadar.id); if(ar) updateRouteHUD(ar); }
+    }
+    logTripDiagnostic('radar-recovery',reason==='manual'?'Recuperació manual del sistema de radars':'Recuperació automàtica del sistema de radars',{previousActive:oldActive||null,radarsFixed:radarDetection.fixed.length,radarsAverage:radarDetection.average.length});
+    const status=document.getElementById('radarRecoveryStatus');
+    if(status) status.textContent='✓ Radars recalculats · '+new Date().toLocaleTimeString();
+    return true;
+  } catch(e) {
+    console.warn('Recuperació de radars fallida',e);
+    logTripDiagnostic('radar-recovery-error','Error durant la recuperació de radars');
+    const status=document.getElementById('radarRecoveryStatus'); if(status) status.textContent='⚠ No s’ha pogut recuperar automàticament';
+    return false;
+  } finally { radarRecoveryBusy=false; }
+}
+
+// Watchdog: només actua amb la pàgina visible. Recalcula si hi ha GPS recent però
+// la comprovació de proximitat s'ha quedat enrere; no reinicia el GPS en bucle.
+setInterval(()=>{
+  if(document.visibilityState!=='visible' || inputMode!=='gps' || lastLat===null || lastLon===null) return;
+  const now=Date.now();
+  const gpsAge=now-(lastGpsTimestamp||0);
+  if(gpsAge>35000){
+    if(now-lastRadarRecoveryAt>60000){
+      logTripDiagnostic('gps-stale','No arriba cap actualització GPS mentre l’app és visible',{ageSeconds:Math.round(gpsAge/1000)});
+      setGPSStatus('waiting','GPS sense actualitzacions recents · esperant senyal');
+      // No fem clearWatch automàticament repetidament: iOS pot limitar la geolocalització.
+      lastRadarRecoveryAt=now;
+    }
+    return;
+  }
+  if(now-lastRadarProximityCheckAt>20000) recoverRadarSystem('watchdog');
+},15000);
 
 function parseMaxspeed(val) {
   if (!val) return null;
@@ -2080,7 +2141,7 @@ setInterval(() => {
 </script>
 <script>
 if ("serviceWorker" in navigator) {
-  // SpeedGuard V25 — force Service Worker refresh and recover from stale caches
+  // SpeedGuard V30 — force Service Worker refresh and recover from stale caches
   if ('serviceWorker' in navigator) {
     let sgReloadedAfterUpdate = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
@@ -2088,9 +2149,9 @@ if ("serviceWorker" in navigator) {
       sgReloadedAfterUpdate = true;
       window.location.reload();
     });
-    navigator.serviceWorker.register('./sw.js?v=29', { updateViaCache: 'none' })
+    navigator.serviceWorker.register('./sw.js?v=30', { updateViaCache: 'none' })
       .then(reg => {
-        console.log('SpeedGuard SW V28 registered', reg);
+        console.log('SpeedGuard SW V30 registered', reg);
         reg.update().catch(() => {});
       })
       .catch(e => console.warn('SW err', e));
