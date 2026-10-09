@@ -260,6 +260,10 @@
     .via-btn .via-icon { font-size: 18px; display: block; margin-bottom: 2px; }
     .via-btn .via-limit { font-family: 'Share Tech Mono', monospace; font-size: 14px; }
 
+    .maintenance-controls{display:grid;grid-template-columns:1fr;gap:6px;margin:8px 0 10px;padding:9px;border:1px solid var(--border);border-radius:10px;background:rgba(255,255,255,.025)}
+    .maintenance-btn{width:100%;padding:9px 10px;border:1px solid #31515b;border-radius:8px;background:#101e24;color:#d9f8ff;font:700 11px/1.3 inherit;letter-spacing:.2px;text-align:left;cursor:pointer;min-height:38px}
+    .maintenance-btn:disabled{opacity:.55;cursor:wait}
+    #maintenanceStatus{font-size:10px;line-height:1.35;color:var(--muted);min-height:13px}
     /* ── GPS STATUS ──────────────────────────── */
     .gps-bar {
       display: flex; align-items: center; justify-content: space-between;
@@ -271,6 +275,12 @@
     .gps-dot.ok      { background: var(--ok);  box-shadow: 0 0 4px var(--ok); animation: blink 2s infinite; }
     .gps-dot.waiting { background: var(--warn); box-shadow: 0 0 4px var(--warn); animation: blink 1s infinite; }
     .gps-dot.error   { background: var(--red);  box-shadow: 0 0 4px var(--red); }
+    .health-indicators{display:flex;gap:5px;flex-wrap:wrap;padding:5px 9px;background:rgba(255,255,255,.025);border-top:1px solid var(--border);font:9px 'Share Tech Mono',monospace}
+    .health-chip{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--border);border-radius:999px;padding:4px 7px;color:var(--muted);white-space:nowrap}
+    .health-chip::before{content:'';width:6px;height:6px;border-radius:50%;background:#89909a;display:inline-block}
+    .health-chip.ok{color:var(--ok);border-color:#00ff8844}.health-chip.ok::before{background:var(--ok)}
+    .health-chip.warn{color:var(--warn);border-color:#ffbf0044}.health-chip.warn::before{background:var(--warn)}
+    .health-chip.error{color:var(--red);border-color:#ff4b4b44}.health-chip.error::before{background:var(--red)}
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
 
     /* ── NAV TABS ────────────────────────────── */
@@ -709,6 +719,12 @@ body.driving-mode #drivingRadarHUD{display:block}
           <button onclick="setManualSpeed(160)" class="via-btn" style="flex:1;padding:4px;font-size:11px;">160</button>
         </div>
       </div>
+      <div class="maintenance-controls" aria-label="Actualitzacions manuals">
+        <button type="button" class="maintenance-btn" id="forceRadarsBtn" onclick="forceRefreshRadars()">📷 Actualitzar radars</button>
+        <button type="button" class="maintenance-btn" id="forceDatabaseBtn" onclick="forceRefreshDatabase()">🗺 Actualitzar base de dades</button>
+        <button type="button" class="maintenance-btn" id="forceGPSBtn" onclick="forceGPSReconnect()">📡 Forçar connexió GPS</button>
+        <div id="maintenanceStatus" role="status" aria-live="polite">Actualitzacions manuals disponibles</div>
+      </div>
       </div><!-- /secondaryControls -->
 
       <!-- Speed hero -->
@@ -868,6 +884,12 @@ body.driving-mode #drivingRadarHUD{display:block}
   <div class="gps-bar" id="gpsBar">
     <span><span class="gps-dot waiting" id="gpsDot"></span><span id="gpsText">Esperando GPS…</span></span>
     <span id="gpsCoords" style="color:var(--muted)"></span>
+  </div>
+
+  <div class="health-indicators" aria-label="Estat del sistema">
+    <span class="health-chip warn" id="healthGps">GPS: esperant</span>
+    <span class="health-chip warn" id="healthInternet">Internet: comprovant</span>
+    <span class="health-chip warn" id="healthMap">Cartografia: pendent</span>
   </div>
 
   <!-- Nav tabs -->
@@ -1324,11 +1346,69 @@ function stopGPS() {
   setGPSStatus('error', 'GPS inactivo');
 }
 
+function setMaintenanceStatus(message, state='info') {
+  const el=document.getElementById('maintenanceStatus');
+  if(!el)return;
+  el.textContent=message;
+  el.style.color=state==='ok'?'var(--ok)':state==='error'?'var(--red)':'var(--muted)';
+}
+function setMaintenanceBusy(id,busy,label) {
+  const b=document.getElementById(id); if(!b)return;
+  b.disabled=busy; if(label)b.dataset.originalLabel ||= b.textContent;
+  b.textContent=busy?'⏳ Actualitzant…':(b.dataset.originalLabel||b.textContent);
+}
+async function forceRefreshRadars() {
+  if(lastLat===null||lastLon===null){setMaintenanceStatus('Encara no hi ha posició GPS. Connecta el GPS i torna-ho a provar.','error');return;}
+  if(radarQuerying){setMaintenanceStatus('La consulta de radars ja està en curs.','info');return;}
+  setMaintenanceBusy('forceRadarsBtn',true);setMaintenanceStatus('Consultant radars a Internet; s’ignorarà la memòria cau…');
+  try { localStorage.removeItem('sg_radar_cache_v23'); await detectRadars(true); markRadarDataUpdated();
+    const msg=document.getElementById('drhAlert')?.textContent||'';
+    const ok=/ACTUALITZATS|LOCAL/i.test(msg);
+    setMaintenanceStatus(ok?'Consulta de radars finalitzada. '+msg:'Consulta finalitzada; si no hi ha dades noves, el servei cartogràfic pot no respondre.','ok');
+  } catch(e){console.warn('Actualització manual de radars',e);setMaintenanceStatus('No s’han pogut actualitzar els radars. Comprova la connexió a Internet.','error');}
+  finally{setMaintenanceBusy('forceRadarsBtn',false);}
+}
+async function forceRefreshDatabase() {
+  if(lastLat===null||lastLon===null){setMaintenanceStatus('Encara no hi ha posició GPS. Connecta el GPS i torna-ho a provar.','error');return;}
+  if(osmQuerying){setMaintenanceStatus('La consulta de la via ja està en curs.','info');return;}
+  if(lastGpsAccuracy>65){setMaintenanceStatus('GPS massa imprecís (±'+Math.round(lastGpsAccuracy)+' m). Espera una millor ubicació i torna-ho a provar.','error');return;}
+  setMaintenanceBusy('forceDatabaseBtn',true);setMaintenanceStatus('Actualitzant la cartografia i el límit de velocitat des d’OpenStreetMap…');
+  try {localStorage.removeItem(sgRoadCacheKey(lastLat,lastLon));await queryOSMLimit(true); markMapDataUpdated();
+    const meta=document.getElementById('roadDiagnosticMeta')?.textContent||'';
+    setMaintenanceStatus('Consulta cartogràfica acabada. '+(meta||'Revisa la via detectada.'),'ok');
+  }catch(e){console.warn('Actualització manual de cartografia',e);setMaintenanceStatus('No s’ha pogut actualitzar la base cartogràfica. Prova-ho més tard.','error');}
+  finally{setMaintenanceBusy('forceDatabaseBtn',false);}
+}
+function forceGPSReconnect() {
+  if(inputMode!=='gps'){inputMode='gps';document.getElementById('btnGPS')?.classList.add('active');document.getElementById('btnManual')?.classList.remove('active');document.getElementById('manualControls').style.display='none';}
+  if(gpsWatchId!=null){try{navigator.geolocation.clearWatch(gpsWatchId);}catch{}gpsWatchId=null;}
+  lastGpsTimestamp=0;lastGpsAccuracy=Infinity;
+  setMaintenanceStatus('Reiniciant la petició d’ubicació d’alta precisió…');
+  startGPS();
+  if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(pos=>{
+      const c=pos.coords;if(!c||!Number.isFinite(c.latitude)||!Number.isFinite(c.longitude))return;
+      lastLat=c.latitude;lastLon=c.longitude;lastGpsAccuracy=c.accuracy??Infinity;lastGpsTimestamp=pos.timestamp||Date.now();
+      const coordEl=document.getElementById('gpsCoords');if(coordEl)coordEl.textContent=`${lastLat.toFixed(5)}, ${lastLon.toFixed(5)} · ±${Math.round(lastGpsAccuracy)} m`;
+      setGPSStatus(lastGpsAccuracy<=50?'ok':'waiting',`GPS actiu · precisió ±${Math.round(lastGpsAccuracy)} m`);
+      setMaintenanceStatus('GPS reconnectat. Precisió actual ±'+Math.round(lastGpsAccuracy)+' m.','ok');
+      if(lastGpsAccuracy<=65){queryOSMLimit();detectRadars();}
+    },err=>{const m=err.code===1?'Permís de localització denegat':err.code===2?'Ubicació no disponible ara mateix':'Temps d’espera del GPS esgotat';setMaintenanceStatus(m+'; el GPS continuarà intentant obtenir posició en segon pla.','error');}, {enableHighAccuracy:true,timeout:20000,maximumAge:0});
+  }
+}
+
 function setGPSStatus(state, text) {
   const dot = document.getElementById('gpsDot');
   dot.className = 'gps-dot ' + state;
   document.getElementById('gpsText').textContent = text;
+  const chip=document.getElementById('healthGps'); if(chip){chip.className='health-chip '+(state==='ok'?'ok':state==='error'?'error':'warn');chip.textContent=lastGpsAccuracy<Infinity?'GPS: ±'+Math.round(lastGpsAccuracy)+' m':'GPS: '+(state==='error'?'error':'esperant');}
 }
+function setHealthChip(id,state,text){const el=document.getElementById(id);if(el){el.className='health-chip '+state;el.textContent=text;}}
+function updateInternetIndicator(){setHealthChip('healthInternet',navigator.onLine?'ok':'error','Internet: '+(navigator.onLine?'connectat':'sense connexió'));}
+window.addEventListener('online',updateInternetIndicator);window.addEventListener('offline',updateInternetIndicator);
+updateInternetIndicator();
+function markMapDataUpdated(){setHealthChip('healthMap','ok','Cartografia: '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}));}
+function markRadarDataUpdated(){setHealthChip('healthMap','ok','Dades: radars '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}));}
 
 // Cache local de cartografia i radars. El GPS continua actualitzant-se en temps real.
 const SG_ROAD_CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
@@ -1341,7 +1421,7 @@ function sgKmBetween(aLat,aLon,bLat,bLon){return haversineKm(aLat,aLon,bLat,bLon
 // ══════════════════════════════════════════════════════════════════
 //  OPENSTREETMAP / OVERPASS API — límite de velocidad
 // ══════════════════════════════════════════════════════════════════
-async function queryOSMLimit() {
+async function queryOSMLimit(forceRefresh = false) {
   if (lastLat===null || lastLon===null || osmQuerying) return;
   if (lastGpsAccuracy > 65) { const status=document.getElementById('osmStatus'); if(status)status.textContent='GPS IMPRECÍS — esperant millor senyal'; return; }
   osmQuerying=true; lastRoadQueryAt=Date.now();
@@ -1349,7 +1429,7 @@ async function queryOSMLimit() {
   const status=document.getElementById('osmStatus'); if(status) status.textContent='⟳ VIA…';
   // Cada cel·la GPS es consulta una vegada; guardem geometria local 7 dies.
   const roadCacheKey=sgRoadCacheKey(queryLat,queryLon);
-  const cachedRoad=sgCacheRead(roadCacheKey);
+  const cachedRoad=forceRefresh ? null : sgCacheRead(roadCacheKey);
   const q=`[out:json][timeout:5];way(around:150,${queryLat},${queryLon})[highway][highway!~"^(footway|path|cycleway|steps|pedestrian|service)$"];out tags geom;`;
   const endpoints=['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter'];
   // Distància punt-segment en metres amb projecció local; evita errors de longitud/latitud en graus.
@@ -1389,7 +1469,7 @@ async function queryOSMLimit() {
     roadDetection={ref,name,limit,highway:t.highway||'',distanceM:c.d*1000,bearing:c.bearing,headingDiff:c.diff,source:'OSM',updatedAt:Date.now(),confidence};
     // Només una via probable/confirmada pot activar una zona SCT o canviar el límit.
     if(confidence!=='bad'){currentRoadRef=ref||'';currentRoadName=name||'';} else {currentRoadRef='';currentRoadName='';}
-    updateRoadDiagnostic(); updateMobileZoneHUD();
+    updateRoadDiagnostic(); updateMobileZoneHUD(); markMapDataUpdated();
     if(limit){
       const found=TIPOS_VIA.reduce((best,v)=>Math.abs(v.limite-limit)<Math.abs(best.limite-limit)?v:best);
       currentVia={...found,limite:limit}; renderViaGrid(); update();
@@ -1428,14 +1508,14 @@ function distanceToRadar(r){return haversineKm(lastLat,lastLon,r.lat,r.lon)}
 function bearingDeg(lat1,lon1,lat2,lon2){const p1=lat1*Math.PI/180,p2=lat2*Math.PI/180,dl=(lon2-lon1)*Math.PI/180,y=Math.sin(dl)*Math.cos(p2),x=Math.cos(p1)*Math.sin(p2)-Math.sin(p1)*Math.cos(p2)*Math.cos(dl);return (Math.atan2(y,x)*180/Math.PI+360)%360}
 function angleDiff(a,b){let d=Math.abs(a-b)%360;return d>180?360-d:d}
 function radarDirectionOK(r){if(!Number.isFinite(currentHeading)||currentSpeed<15)return true;return angleDiff(currentHeading,bearingDeg(r.lat,r.lon,r.toLat,r.toLon))<=65}
-async function detectRadars(){
+async function detectRadars(forceRefresh = false){
   if(lastLat===null||lastLon===null||radarQuerying)return; radarQuerying=true; lastRadarQueryAt=Date.now();
   const query=`[out:json][timeout:10];(node(around:8000,${lastLat},${lastLon})[highway=speed_camera];rel(around:8000,${lastLat},${lastLon})[type=enforcement][enforcement=average_speed];rel(around:8000,${lastLat},${lastLon})[enforcement=average_speed];);out body;>;out body;`;
   const endpoints=['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter'];
   try{
     // La mateixa cobertura de radars es reutilitza fins a 24 h mentre som a menys de 4 km del centre.
     const radarCache=sgCacheRead('sg_radar_cache_v23');
-    if(radarCache&&Array.isArray(radarCache.fixed)&&Array.isArray(radarCache.average)&&Date.now()-radarCache.savedAt<SG_RADAR_CACHE_TTL&&sgKmBetween(lastLat,lastLon,radarCache.lat,radarCache.lon)<4){
+    if(!forceRefresh&&radarCache&&Array.isArray(radarCache.fixed)&&Array.isArray(radarCache.average)&&Date.now()-radarCache.savedAt<SG_RADAR_CACHE_TTL&&sgKmBetween(lastLat,lastLon,radarCache.lat,radarCache.lon)<4){
       radarDetection.fixed=radarCache.fixed;radarDetection.average=radarCache.average;
       checkRadarProximity();updateNearestRadarHUD();updateRadarScanHUD('● RADARS EN MEMÒRIA LOCAL');return;
     }
@@ -1448,7 +1528,7 @@ async function detectRadars(){
     radarDetection.fixed=(data.elements||[]).filter(e=>e.type==='node'&&e.tags?.highway==='speed_camera').map(e=>({id:'f'+e.id,lat:e.lat,lon:e.lon,limit:parseMaxspeed(e.tags?.maxspeed)||currentVia.limite,type:'fixed'})); radarDetection.average=[];
     for(const rel of rels){let from=null,to=null,sectionNodes=[];for(const m of(rel.members||[])){if(m.type==='node'&&nodes.has(m.ref)){if(m.role==='from')from=nodes.get(m.ref);if(m.role==='to')to=nodes.get(m.ref)}if(m.role==='section'&&m.type==='way'&&ways.has(m.ref)){const wn=ways.get(m.ref).nodes||[];if(wn.length){const a=nodes.get(wn[0]),b=nodes.get(wn[wn.length-1]);if(a)sectionNodes.push(a);if(b)sectionNodes.push(b)}}}if(!from&&sectionNodes.length)from=sectionNodes[0];if(!to&&sectionNodes.length)to=sectionNodes[sectionNodes.length-1];if(!from||!to)continue;const limit=parseMaxspeed(rel.tags?.maxspeed||rel.tags?.['maxspeed:enforcement'])||currentVia.limite,total=haversineKm(from.lat,from.lon,to.lat,to.lon);if(total<.1)continue;radarDetection.average.push({id:'a'+rel.id,lat:from.lat,lon:from.lon,toLat:to.lat,toLon:to.lon,totalKm:total,limit,type:'average',path:sectionNodes.map(n=>({lat:n.lat,lon:n.lon}))})}
     sgCacheWrite('sg_radar_cache_v23',{savedAt:Date.now(),lat:lastLat,lon:lastLon,fixed:radarDetection.fixed,average:radarDetection.average});
-    checkRadarProximity();updateNearestRadarHUD();updateRadarScanHUD('● RADARS ACTUALITZATS');
+    checkRadarProximity();updateNearestRadarHUD();updateRadarScanHUD('● RADARS ACTUALITZATS');markRadarDataUpdated();
   }catch(e){updateRadarScanHUD('⚠ RADARS: dades no disponibles')}finally{radarQuerying=false}
 }
 function updateRadarScanHUD(message){const hud=document.getElementById('drivingRadarHUD'),live=document.getElementById('drhLive'),alert=document.getElementById('drhAlert');if(!hud||!live||!alert||segmentRadar.active)return;live.style.display='none';alert.textContent=message||T().scanning(radarDetection.fixed.length+radarDetection.average.length);hud.classList.add('visible')}
