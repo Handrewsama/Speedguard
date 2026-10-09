@@ -1240,48 +1240,72 @@ function resetSpeedCalibration(){ speedCalibration={...DEFAULT_SPEED_CALIBRATION
 // ══════════════════════════════════════════════════════════════════
 function startGPS() {
   if (!navigator.geolocation) {
-    setGPSStatus('error', 'GPS no disponible');
+    setGPSStatus('error', 'GPS no disponible en aquest navegador');
     return;
   }
-  setGPSStatus('waiting', 'Buscando señal…');
-  if (!tripStartedAt || Date.now()-tripStartedAt>6*60*60*1000) startNewTrip();
-  gpsWatchId = navigator.geolocation.watchPosition(
-    pos => {
-      const spd = pos.coords.speed != null ? pos.coords.speed * 3.6 : null;
-      if (spd != null && Number.isFinite(spd)) { rawGpsSpeed = spd; currentSpeed = applySpeedCalibration(spd); }
-      lastGpsTimestamp = pos.timestamp || Date.now();
-      lastGpsAccuracy = Number.isFinite(pos.coords.accuracy) ? pos.coords.accuracy : Infinity;
-      // El curs GPS només és fiable quan hi ha moviment; a peu de carrer pot saltar molt.
-      if (Number.isFinite(pos.coords.heading) && pos.coords.heading >= 0 && currentSpeed >= 8) { currentHeading = normalizeDeg(pos.coords.heading); lastGpsHeadingAt = Date.now(); }
-      // Evita que un fix molt imprecís faci saltar la posició i canviï falsament de carretera/radar.
-      // La primera coordenada es conserva com a punt provisional fins que arribi un fix millor.
-      const acceptPosition = lastGpsAccuracy <= 65 || lastLat === null || lastLon === null;
-      if (acceptPosition) {
-        lastLat = pos.coords.latitude;
-        lastLon = pos.coords.longitude;
-        updateSegmentRadarPosition(lastLat, lastLon);
-        updateNearestRadarHUD();
-        document.getElementById('gpsCoords').textContent = lastLat.toFixed(4) + ',' + lastLon.toFixed(4);
-      } else {
-        updateCompassRibbon();
-      }
-      const acc = Math.round(pos.coords.accuracy);
-      setGPSStatus(lastGpsAccuracy <= 50 ? 'ok' : 'waiting', lastGpsAccuracy <= 50 ? `GPS ±${acc}m` : `GPS imprecís ±${acc}m`);
-      update();
-      // No consultis carreteres ni radars amb una posició que el GPS marca com a imprecisa.
-      if (lastGpsAccuracy <= 65) {
-        if (!osmQuerying && Date.now()-lastRoadQueryAt >= 2500) queryOSMLimit();
-        if (!radarQuerying && (Date.now() - lastRadarQueryAt > 6000)) detectRadars();
-      }
-    },
-    err => {
-      const msgs = { 1:'Permiso denegado', 2:'Posición no disponible', 3:'Tiempo agotado' };
-      setGPSStatus('error', msgs[err.code] || 'Error GPS');
-    },
-    { enableHighAccuracy: true, timeout: 10000, maximumAge: 2000 }
-  );
-}
+  // Evita acumular diversos watchPosition actius si es torna a seleccionar GPS.
+  if (gpsWatchId != null) {
+    try { navigator.geolocation.clearWatch(gpsWatchId); } catch {}
+    gpsWatchId = null;
+  }
+  setGPSStatus('waiting', 'Buscant senyal GPS…');
+  try { if (!tripStartedAt || Date.now()-tripStartedAt>6*60*60*1000) startNewTrip(); } catch (e) { console.warn('No s’ha pogut iniciar l’historial del trajecte', e); }
+  try {
+    gpsWatchId = navigator.geolocation.watchPosition(
+      pos => {
+        try {
+          const coords = pos && pos.coords;
+          if (!coords || !Number.isFinite(coords.latitude) || !Number.isFinite(coords.longitude)) {
+            setGPSStatus('waiting', 'Esperant coordenades GPS…');
+            return;
+          }
+          const accuracy = Number.isFinite(coords.accuracy) ? coords.accuracy : Infinity;
+          lastGpsAccuracy = accuracy;
+          lastGpsTimestamp = pos.timestamp || Date.now();
+          const spd = coords.speed != null ? coords.speed * 3.6 : null;
+          if (spd != null && Number.isFinite(spd)) { rawGpsSpeed = spd; currentSpeed = applySpeedCalibration(spd); }
+          if (Number.isFinite(coords.heading) && coords.heading >= 0 && currentSpeed >= 8) {
+            currentHeading = normalizeDeg(coords.heading);
+            lastGpsHeadingAt = Date.now();
+          }
 
+          // La posició sempre es mostra; la precisió només condiciona les consultes cartogràfiques.
+          lastLat = coords.latitude;
+          lastLon = coords.longitude;
+          const coordEl = document.getElementById('gpsCoords');
+          if (coordEl) coordEl.textContent = `${lastLat.toFixed(5)}, ${lastLon.toFixed(5)} · ±${Math.round(accuracy)} m`;
+          setGPSStatus(accuracy <= 50 ? 'ok' : 'waiting', accuracy <= 50 ? `GPS actiu ±${Math.round(accuracy)} m` : `GPS actiu · precisió ±${Math.round(accuracy)} m`);
+
+          // Aïllem cada actualització visual: un component trencat no ha d'aturar el GPS.
+          try { update(); } catch (e) { console.warn('Error actualitzant velocitat/HUD', e); }
+          try { updateCompassRibbon(); } catch (e) { console.warn('Error actualitzant brúixola', e); }
+          try { updateSegmentRadarPosition(lastLat, lastLon); } catch (e) { console.warn('Error actualitzant radar de tram', e); }
+          try { updateNearestRadarHUD(); } catch (e) { console.warn('Error actualitzant HUD de radars', e); }
+
+          if (accuracy <= 65) {
+            if (!osmQuerying && Date.now()-lastRoadQueryAt >= 2500) queryOSMLimit();
+            if (!radarQuerying && (Date.now() - lastRadarQueryAt > 6000)) detectRadars();
+          } else {
+            const status = document.getElementById('osmStatus');
+            if (status) status.textContent = 'GPS ACTIU · esperant més precisió per detectar la via';
+          }
+        } catch (e) {
+          console.error('Error processant la posició GPS', e);
+          setGPSStatus('waiting', 'GPS rebut; error actualitzant la pantalla');
+        }
+      },
+      err => {
+        const msgs = { 1:'Permís de localització denegat', 2:'Posició GPS temporalment no disponible', 3:'S’ha esgotat el temps d’espera del GPS' };
+        setGPSStatus('error', msgs[err.code] || 'Error GPS');
+        console.warn('Geolocation error', err.code, err.message);
+      },
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 1000 }
+    );
+  } catch (e) {
+    console.error('No s’ha pogut iniciar watchPosition', e);
+    setGPSStatus('error', location.protocol === 'https:' || location.hostname === 'localhost' ? 'No s’ha pogut iniciar el GPS' : 'Cal obrir l’app amb HTTPS per usar el GPS');
+  }
+}
 function stopGPS() {
   if (gpsWatchId != null) navigator.geolocation.clearWatch(gpsWatchId);
   setGPSStatus('error', 'GPS inactivo');
@@ -1890,7 +1914,7 @@ setInterval(() => {
 </script>
 <script>
 if ("serviceWorker" in navigator) {
-  // SpeedGuard V20 — force Service Worker refresh and recover from stale V1-V13 caches
+  // SpeedGuard V24 — force Service Worker refresh and recover from stale caches
   if ('serviceWorker' in navigator) {
     let sgReloadedAfterUpdate = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
@@ -1898,9 +1922,9 @@ if ("serviceWorker" in navigator) {
       sgReloadedAfterUpdate = true;
       window.location.reload();
     });
-    navigator.serviceWorker.register('./sw.js?v=20', { updateViaCache: 'none' })
+    navigator.serviceWorker.register('./sw.js?v=24', { updateViaCache: 'none' })
       .then(reg => {
-        console.log('SpeedGuard SW V20 registered', reg);
+        console.log('SpeedGuard SW V24 registered', reg);
         reg.update().catch(() => {});
       })
       .catch(e => console.warn('SW err', e));
