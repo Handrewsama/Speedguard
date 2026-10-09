@@ -637,7 +637,7 @@ body.driving-mode #drivingRadarHUD{display:block}
   <div id="titleBar">
     <div class="tb-left">
       <div class="tb-dot" id="statusDot"></div>
-      <img class="tb-logo" src="logo-mark.png" alt="" aria-hidden="true"><span class="tb-title">SPEEDGUARD <span class="app-version">V33</span></span>
+      <img class="tb-logo" src="logo-mark.png" alt="" aria-hidden="true"><span class="tb-title">SPEEDGUARD <span class="app-version">V34</span></span>
     </div>
     <div class="tb-actions">
       <button class="tb-btn" id="minimizeBtn" title="Minimizar">_</button>
@@ -937,47 +937,118 @@ const SG_I18N = {
   }
 };
 let interfaceLanguage = localStorage.getItem('sg_interface_language') || 'ca';
-function translateInterface(root=document) {
-  const dict=SG_I18N[interfaceLanguage]||SG_I18N.ca;
-  root.querySelectorAll('*').forEach(el=>{
-    if(el.children.length===0 && el.textContent.trim()){
-      if(!el.dataset.i18nOriginal) el.dataset.i18nOriginal=el.textContent;
-      let original=el.dataset.i18nOriginal.trim();
-      // If JS has replaced a label's content dynamically, remember the new source text.
-      const previousCa=SG_I18N.ca[original], previousEs=SG_I18N.es[original];
-      if(el.textContent.trim()!==original && el.textContent.trim()!==previousCa && el.textContent.trim()!==previousEs){
-        el.dataset.i18nOriginal=el.textContent;original=el.textContent.trim();
-      }
-      const translated=dict[original];
-      if(translated && el.textContent!==translated) el.textContent=translated;
-      else if(!translated && interfaceLanguage==='ca' && el.dataset.i18nOriginal) { /* Catalan is the source language; preserve unknown labels */ }
+let sgApplyingTranslations = false;
+const sgTranslationPairs = (() => {
+  const pairs = new Map();
+  for (const [lang, dict] of Object.entries(SG_I18N)) {
+    for (const [source, translated] of Object.entries(dict)) {
+      if (typeof translated !== 'string') continue;
+      // Every known CA/ES variant resolves to the same canonical source key.
+      if (!pairs.has(source)) pairs.set(source, source);
+      pairs.set(translated, pairs.get(source) || source);
     }
-    ['title','aria-label','placeholder'].forEach(attr=>{
-      if(el.hasAttribute(attr)){
-        const key='i18n'+attr.replace(/^[a-z]/,c=>c.toUpperCase());
-        if(!el.dataset[key]) el.dataset[key]=el.getAttribute(attr);
-        const original=el.dataset[key]; if(dict[original]) el.setAttribute(attr,dict[original]);
+  }
+  return pairs;
+})();
+function sgCanonicalText(text) {
+  const clean = String(text || '').trim();
+  return sgTranslationPairs.get(clean) || clean;
+}
+function sgLookupTranslation(source, dict) {
+  if (Object.prototype.hasOwnProperty.call(dict, source)) return dict[source];
+  // Also support dictionaries whose entry was authored in the opposite direction.
+  for (const [key, value] of Object.entries(dict)) {
+    if (value === source) return key;
+  }
+  return source;
+}
+function sgTranslateLeaf(el, dict) {
+  const current = el.textContent;
+  const trimmed = current.trim();
+  if (!trimmed) return;
+  // Remember the source only when the text is not the translation we applied last time.
+  const lastApplied = el.dataset.sgI18nApplied;
+  if (!el.dataset.sgI18nSource || (trimmed !== lastApplied && lastApplied !== undefined)) {
+    el.dataset.sgI18nSource = sgCanonicalText(trimmed);
+  } else if (!lastApplied && !el.dataset.sgI18nSource) {
+    el.dataset.sgI18nSource = sgCanonicalText(trimmed);
+  }
+  const source = el.dataset.sgI18nSource;
+  const translated = sgLookupTranslation(source, dict) || source;
+  if (current !== translated) {
+    el.textContent = translated;
+  }
+  el.dataset.sgI18nApplied = translated;
+}
+function translateInterface(root=document) {
+  const dict = SG_I18N[interfaceLanguage] || SG_I18N.ca;
+  sgApplyingTranslations = true;
+  try {
+    const all = [];
+    if (root.nodeType === 1 && root.matches && root.matches('*')) all.push(root);
+    if (root.querySelectorAll) all.push(...root.querySelectorAll('*'));
+    all.forEach(el => {
+      // Translate leaf text only; never overwrite inputs or elements with child structure.
+      if (el.children.length === 0 && el.tagName !== 'SCRIPT' && el.tagName !== 'STYLE' && el.tagName !== 'OPTION') {
+        sgTranslateLeaf(el, dict);
       }
+      ['title','aria-label','placeholder'].forEach(attr => {
+        if (!el.hasAttribute(attr)) return;
+        const sourceKey = 'sgSource' + attr;
+        const appliedKey = 'sgApplied' + attr;
+        const current = el.getAttribute(attr);
+        if (!el.dataset[sourceKey] || (el.dataset[appliedKey] && current !== el.dataset[appliedKey])) {
+          el.dataset[sourceKey] = sgCanonicalText(current);
+        }
+        const translated = sgLookupTranslation(el.dataset[sourceKey], dict) || el.dataset[sourceKey];
+        if (current !== translated) el.setAttribute(attr, translated);
+        el.dataset[appliedKey] = translated;
+      });
     });
-  });
-  root.querySelectorAll('[data-i18n]').forEach(el=>{const key=el.dataset.i18n;if(dict[key])el.textContent=dict[key];});
-  const value=document.getElementById('interfaceLanguageValue'); if(value)value.textContent=interfaceLanguage==='es'?'Español':'Català';
-  document.documentElement.lang=interfaceLanguage;
+    // Stable keyed translations for elements with nested markup.
+    root.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.dataset.i18n;
+      if (dict[key]) el.textContent = dict[key];
+    });
+    const value = document.getElementById('interfaceLanguageValue');
+    if (value) value.textContent = interfaceLanguage === 'es' ? 'Español' : 'Català';
+    document.documentElement.lang = interfaceLanguage;
+  } finally {
+    sgApplyingTranslations = false;
+  }
 }
-function setInterfaceLanguage(lang){interfaceLanguage=lang==='es'?'es':'ca';localStorage.setItem('sg_interface_language',interfaceLanguage);translateInterface();}
-document.addEventListener('DOMContentLoaded',()=>{const sel=document.getElementById('interfaceLanguage');if(sel){sel.value=interfaceLanguage;sel.addEventListener('change',()=>setInterfaceLanguage(sel.value));}translateInterface();});
-// Translate dynamically updated text too (status labels, radar messages, trip summaries).
-let sgTranslating=false, sgTranslateQueued=false;
-function queueDynamicTranslation(){
-  if(sgTranslating||sgTranslateQueued)return;
-  sgTranslateQueued=true;
-  queueMicrotask(()=>{sgTranslateQueued=false;if(sgTranslating)return;sgTranslating=true;try{translateInterface();}finally{sgTranslating=false;}});
+function setInterfaceLanguage(lang) {
+  interfaceLanguage = lang === 'es' ? 'es' : 'ca';
+  localStorage.setItem('sg_interface_language', interfaceLanguage);
+  const selector = document.getElementById('interfaceLanguage');
+  if (selector && selector.value !== interfaceLanguage) selector.value = interfaceLanguage;
+  translateInterface();
+  // Some screens rebuild their labels on the next frame; translate those too.
+  requestAnimationFrame(() => translateInterface());
 }
-const sgTranslationObserver=new MutationObserver(mutations=>{
-  if(sgTranslating)return;
-  if(mutations.some(m=>m.type==='characterData'||m.type==='childList'))queueDynamicTranslation();
+document.addEventListener('DOMContentLoaded', () => {
+  const selector = document.getElementById('interfaceLanguage');
+  if (selector) {
+    selector.value = interfaceLanguage;
+    selector.addEventListener('change', () => setInterfaceLanguage(selector.value));
+  }
+  translateInterface();
 });
-sgTranslationObserver.observe(document.documentElement,{childList:true,subtree:true,characterData:true});
+// Re-translate text inserted or rewritten by the app (status, radar messages, summaries).
+let sgTranslateQueued = false;
+function queueDynamicTranslation() {
+  if (sgApplyingTranslations || sgTranslateQueued) return;
+  sgTranslateQueued = true;
+  queueMicrotask(() => {
+    sgTranslateQueued = false;
+    if (!sgApplyingTranslations) translateInterface();
+  });
+}
+const sgTranslationObserver = new MutationObserver(mutations => {
+  if (sgApplyingTranslations) return;
+  if (mutations.some(m => m.type === 'characterData' || m.type === 'childList' || m.type === 'attributes')) queueDynamicTranslation();
+});
+sgTranslationObserver.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
 // ══════════════════════════════════════════════════════════════════
 //  DEFAULT SANCIONES (legislación española RDL 6/2015 + Ley 18/2021)
 // ══════════════════════════════════════════════════════════════════
