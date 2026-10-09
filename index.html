@@ -402,21 +402,27 @@
       body.driving-mode #sancionCard { margin-bottom:10px; }
     }
 
-    /* ── RADAR COMPASS / NEAREST RADAR HUD ─────────────── */
-    #drhCompassWrap{display:flex;align-items:center;gap:10px;padding:7px 9px;border-bottom:1px solid rgba(255,255,255,.06);background:linear-gradient(180deg,rgba(0,255,136,.055),rgba(0,0,0,.08));}
-    .drh-compass-dial{position:relative;width:82px;height:82px;min-width:82px;border:1px solid rgba(0,255,136,.38);border-radius:50%;background:radial-gradient(circle,#111a19 0 52%,#07100f 53% 100%);box-shadow:inset 0 0 12px rgba(0,255,136,.08);overflow:hidden;}
-    .drh-compass-dial::before{content:"";position:absolute;inset:7px;border:1px dashed rgba(255,255,255,.13);border-radius:50%;}
-    .drh-dir{position:absolute;font:900 12px 'Share Tech Mono',monospace;color:#69777a;z-index:2;}
-    .drh-dir.n{top:3px;left:50%;transform:translateX(-50%);color:#00ff88}.drh-dir.e{right:5px;top:50%;transform:translateY(-50%)}.drh-dir.s{bottom:3px;left:50%;transform:translateX(-50%)}.drh-dir.w{left:5px;top:50%;transform:translateY(-50%)}
-    .drh-tick{position:absolute;width:1px;height:5px;background:#556365;left:50%;top:4px;transform-origin:50% 25px;}.drh-tick.t90{transform:rotate(90deg)}.drh-tick.t180{transform:rotate(180deg)}.drh-tick.t270{transform:rotate(270deg)}
-    .drh-heading{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font:700 7px 'Share Tech Mono',monospace;color:#a9b3b5;z-index:3;}
-    .drh-arrow{position:absolute;left:50%;top:50%;transform:translate(-50%,-53%);font-size:40px;font-weight:900;line-height:1;color:#00ff88;text-shadow:0 0 10px rgba(0,255,136,.65);z-index:4;transition:transform .18s ease,color .18s ease;}
-    .drh-radar-info{min-width:0;flex:1;display:grid;grid-template-columns:1fr auto;align-items:center;column-gap:8px;row-gap:2px;}
-    .drh-radar-type{font:900 16px/1.1 'Rajdhani',sans-serif;letter-spacing:1px;color:#eafcff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.drh-radar-distance{font:800 24px 'Share Tech Mono',monospace;color:#00ff88;white-space:nowrap}.drh-radar-limit{grid-column:1/-1;font:800 15px 'Share Tech Mono',monospace;color:#9ed5ff}.drh-radar-info.empty{opacity:.62}
-    .drh-compass-dial.no-heading .drh-arrow{opacity:.28}.drh-compass-dial.no-heading .drh-heading{color:#69777a}
+    /* ── FULL-WIDTH COMPASS + RADAR MARKERS V22 ─────────── */
+    #drhCompassWrap{display:block;width:100%;box-sizing:border-box;padding:7px 0 6px;margin:0;border-bottom:1px solid rgba(255,255,255,.12);background:linear-gradient(180deg,rgba(0,255,136,.07),rgba(0,0,0,.12));overflow:hidden}
+    .direction-ribbon-head{display:flex;align-items:baseline;justify-content:center;gap:10px;padding:0 8px 5px;color:#93a6a9;font:800 10px 'Rajdhani',sans-serif;letter-spacing:1px}
+    .direction-ribbon-head strong{font:900 22px 'Share Tech Mono',monospace;color:#00ff88}
+    #drhDrivingDegrees{font:800 13px 'Share Tech Mono',monospace;color:#eafcff}
+    .direction-ribbon{height:43px;position:relative;width:100%;border-top:1px solid #263739;border-bottom:1px solid #263739;background:linear-gradient(90deg,rgba(0,0,0,.28),rgba(0,255,136,.055),rgba(0,0,0,.28));overflow:hidden}
+    .compass-cardinal{position:absolute;top:17px;transform:translateX(-50%);font:900 13px 'Share Tech Mono',monospace;color:#aebfc2;min-width:12px;text-align:center;transition:left .15s linear}
+    .compass-cardinal.north{color:#00ff88;font-size:15px}
+    .compass-heading-marker{position:absolute;left:50%;top:0;bottom:0;width:2px;background:#00ff88;box-shadow:0 0 8px rgba(0,255,136,.75);transform:translateX(-50%);z-index:3}
+    .compass-heading-marker:before{content:'▼';position:absolute;top:-1px;left:50%;transform:translateX(-50%);font-size:10px;color:#00ff88}
+    .compass-radar-marker{position:absolute;top:1px;transform:translateX(-50%);z-index:4;font-size:18px;line-height:19px;filter:drop-shadow(0 0 4px rgba(0,0,0,.9));display:none}
+    .compass-radar-marker.active{display:block}
+    .compass-radar-marker.fixed{color:#ffe56d}.compass-radar-marker.average{color:#8adfff}
+    .ribbon-legend{display:flex;justify-content:space-around;align-items:center;gap:4px;padding:6px 4px 0;font:800 10px 'Rajdhani',sans-serif;color:#9fb0b2}
+    .ribbon-legend span{display:flex;align-items:center;justify-content:center;gap:4px;flex:1;min-width:0;text-align:center;white-space:nowrap}
+    .ribbon-legend .legend-icon{font-size:17px;line-height:1}
+    .ribbon-legend .active{color:#00ff88}.ribbon-legend .possible{color:#ffb65c}
+    .drh-compass-dial,.drh-radar-info,.direction-ribbon-foot{display:none!important}
 
     /* ── DRIVING RADAR HUD: zero-touch while driving ─────── */
-    #drivingRadarHUD{display:none;position:relative;z-index:1200;margin:0 10px 6px;border:1px solid rgba(0,255,136,.28);border-radius:12px;background:rgba(5,12,12,.94);box-shadow:0 0 22px rgba(0,255,136,.08);overflow:hidden;pointer-events:none}
+    #drivingRadarHUD{display:none;position:relative;z-index:1200;margin:0 0 6px;border:0;border-bottom:1px solid rgba(0,255,136,.28);border-radius:0;background:rgba(5,12,12,.94);box-shadow:0 0 22px rgba(0,255,136,.08);overflow:hidden;pointer-events:none}
     #drivingRadarHUD.visible{display:block}
     #drivingRadarHUD .drh-alert{padding:10px 12px;font:900 17px/1.25 'Rajdhani',sans-serif;letter-spacing:1px;color:#9ed5ff;border-bottom:1px solid rgba(255,255,255,.06)}
     #drivingRadarHUD.fixed .drh-alert{color:#dfff9b}
@@ -458,16 +464,16 @@
 body.driving-mode #drivingRadarHUD{display:block}
     body.driving-mode #segmentCard{display:none}
     @media(max-width:600px),(max-height:700px){
-      #drivingRadarHUD{margin:0 8px 4px;border-radius:10px}
+      #drivingRadarHUD{margin:0 0 4px;border-radius:0}
       #drivingRadarHUD .drh-alert{padding:7px 9px;font-size:11px}
       #drivingRadarHUD .drh-live{padding:7px 9px 8px}
       #drivingRadarHUD .drh-value{font-size:20px}
-      #drhCompassWrap{padding:6px 8px;gap:8px}
-      .drh-compass-dial{width:82px;height:82px;min-width:82px}
-      .drh-radar-type{font-size:16px}.drh-radar-distance{font-size:24px}.drh-radar-limit{font-size:15px}
-      .drh-arrow{font-size:21px}
-      .drh-radar-distance{font-size:14px}
-      .drh-radar-type{font-size:9px}
+      #drhCompassWrap{padding:6px 0}
+      .direction-ribbon-head strong{font-size:21px}
+      .direction-ribbon{height:43px}
+      .compass-cardinal{font-size:12px}
+      .ribbon-legend{font-size:9px}
+      .ribbon-legend .legend-icon{font-size:16px}
     }
 
     /* ── MOBILE / PHONE LAYOUT ───────────────────────────── */
@@ -603,7 +609,7 @@ body.driving-mode #drivingRadarHUD{display:block}
   <div id="titleBar">
     <div class="tb-left">
       <div class="tb-dot" id="statusDot"></div>
-      <span class="tb-title">SPEEDGUARD <span class="app-version">V20</span></span>
+      <span class="tb-title">SPEEDGUARD <span class="app-version">V22</span></span>
     </div>
     <div class="tb-actions">
       <button class="tb-btn" id="minimizeBtn" title="Minimizar">_</button>
@@ -613,18 +619,21 @@ body.driving-mode #drivingRadarHUD{display:block}
 
   <!-- Driving radar HUD: visible without scroll/touch in driving mode -->
   <div id="drivingRadarHUD" aria-live="assertive">
-    <div class="drh-compass" id="drhCompassWrap">
-      <div class="drh-compass-dial" id="drhCompassDial">
-        <span class="drh-dir n">N</span><span class="drh-dir e">E</span><span class="drh-dir s">S</span><span class="drh-dir w">W</span>
-        <span class="drh-tick t0"></span><span class="drh-tick t90"></span><span class="drh-tick t180"></span><span class="drh-tick t270"></span>
-        <div class="drh-heading">—</div>
-        <div class="drh-arrow" id="drhArrow">▲</div>
+    <div class="drh-compass" id="drhCompassWrap" aria-label="Brúixola a pantalla completa i indicadors de radars">
+      <div class="direction-ribbon-head"><span>RUMB</span><strong id="drhDrivingDirection">—</strong><span id="drhDrivingDegrees">—°</span></div>
+      <div class="direction-ribbon" id="directionRibbon" aria-label="Brúixola">
+        <span class="compass-cardinal north" id="compassN">N</span><span class="compass-cardinal" id="compassE">E</span><span class="compass-cardinal" id="compassS">S</span><span class="compass-cardinal" id="compassW">O</span>
+        <span class="compass-radar-marker fixed" id="compassFixedMarker" title="Radar fix">📷</span>
+        <span class="compass-radar-marker average" id="compassAverageMarker" title="Radar de tram">🚦</span>
+        <div class="compass-heading-marker" aria-hidden="true"></div>
       </div>
-      <div class="drh-radar-info">
-        <div class="drh-radar-type" id="drhRadarType">BUSCANT RADAR</div>
-        <div class="drh-radar-distance" id="drhRadarDistance">—</div>
-        <div class="drh-radar-limit" id="drhRadarLimit">— km/h</div>
+      <div class="ribbon-legend">
+        <span id="legendFixed"><b class="legend-icon">📷</b> Radar fix</span>
+        <span id="legendAverage"><b class="legend-icon">🚦</b> Radar de tram</span>
+        <span id="legendMobile"><b class="legend-icon">🚓</b> Possible mòbil</span>
       </div>
+      <div class="drh-compass-dial" id="drhCompassDial" aria-hidden="true" style="display:none"><div class="drh-heading">—</div><div class="drh-arrow" id="drhArrow">▲</div></div>
+      <div class="direction-ribbon-foot" style="display:none"><span id="drhRelativeDirection">RADAR: —</span><strong id="drhRadarType">BUSCANT RADAR</strong><strong id="drhRadarDistance">—</strong><span id="drhRadarLimit">— km/h</span></div>
     </div>
     <button id="exitDriveBtn" type="button" onclick="exitDrivingMode()">⏹ SALIR DEL MODO CONDUCCIÓN</button>
     <div class="drh-alert" id="drhAlert">📡 ESCANEJANT RADARS…</div>
@@ -903,6 +912,8 @@ let inputMode    = 'gps';            // 'gps' | 'manual'
 let gpsWatchId   = null;
 let lastLat      = null, lastLon = null;
 let currentHeading = null;
+let lastGpsHeadingAt = 0;
+let lastGpsAccuracy = Infinity;
 let deviceCompassHeading = null;
 let orientationListening = false;
 let lastGpsTimestamp = 0;
@@ -1076,13 +1087,44 @@ function onDeviceOrientation(e){
   let h=null;
   if(Number.isFinite(e.webkitCompassHeading)) h=e.webkitCompassHeading;
   else if(Number.isFinite(e.alpha)) h=normalizeDeg(360-e.alpha);
-  if(h!==null){deviceCompassHeading=h;currentHeading=h;updateNearestRadarHUD();}
+  if(h!==null){deviceCompassHeading=h;updateNearestRadarHUD();}
 }
 function getUsableHeading(){
-  if(Number.isFinite(deviceCompassHeading)) return deviceCompassHeading;
-  if(Number.isFinite(currentHeading)) return currentHeading;
+  // El rumb GPS (curs de moviment) és el millor indicador de direcció del vehicle quan es mou.
+  // A baixa velocitat només fem servir la brúixola del dispositiu com a aproximació.
+  const movingHeading=Number.isFinite(currentHeading)&&currentSpeed>=8&&(Date.now()-lastGpsHeadingAt)<15000;
+  if(movingHeading)return normalizeDeg(currentHeading);
+  if(Number.isFinite(deviceCompassHeading))return normalizeDeg(deviceCompassHeading);
+  if(Number.isFinite(currentHeading)&&(Date.now()-lastGpsHeadingAt)<30000)return normalizeDeg(currentHeading);
   return null;
 }
+function closestRadarOfType(list, type){
+  if(lastLat===null||lastLon===null)return null;
+  return (list||[]).map(r=>({...r,d:distanceToRadar(r)})).filter(r=>Number.isFinite(r.d)&&(!Number.isFinite(getUsableHeading())||angleDiff(getUsableHeading(),bearingDeg(lastLat,lastLon,r.lat,r.lon))<=120)).sort((a,b)=>a.d-b.d)[0]||null;
+}
+function setCompassMarker(id,radar,heading){
+  const el=document.getElementById(id);if(!el)return;
+  if(!radar||!Number.isFinite(heading)||lastLat===null||lastLon===null){el.classList.remove('active');return;}
+  const rel=relativeAngle(bearingDeg(lastLat,lastLon,radar.lat,radar.lon),heading);
+  // Visible half-circle: forward is center, sides are +/-90°, rear radars sit at the edges.
+  const x=Math.max(4,Math.min(96,50+(rel/180)*46));el.style.left=x+'%';el.classList.add('active');
+}
+function updateCompassRibbon(){
+  const heading=getUsableHeading();
+  const name=document.getElementById('drhDrivingDirection'),degrees=document.getElementById('drhDrivingDegrees');
+  const dirs=[['compassN',0],['compassE',90],['compassS',180],['compassW',270]];
+  if(name)name.textContent=Number.isFinite(heading)?['N','E','S','O'][Math.round(normalizeDeg(heading)/90)%4]:'—';
+  if(degrees)degrees.textContent=Number.isFinite(heading)?Math.round(heading)+'°':'GPS…';
+  dirs.forEach(([id,bearing])=>{const el=document.getElementById(id);if(!el)return;let rel=Number.isFinite(heading)?relativeAngle(bearing,heading):bearing;el.style.left=(50+(rel/180)*46)+'%';});
+  const fixed=alertSettings.fixed?closestRadarOfType(radarDetection.fixed,'fixed'):null;
+  const average=alertSettings.average?closestRadarOfType(radarDetection.average,'average'):null;
+  setCompassMarker('compassFixedMarker',fixed,heading);setCompassMarker('compassAverageMarker',average,heading);
+  const mobile=getSctMobileZone()&&alertSettings.mobileZones;
+  document.getElementById('legendFixed')?.classList.toggle('active',!!fixed);
+  document.getElementById('legendAverage')?.classList.toggle('active',!!average);
+  document.getElementById('legendMobile')?.classList.toggle('possible',!!mobile);
+}
+
 function nearestRadar(){
   if(lastLat===null||lastLon===null) return null;
   const all=[...radarDetection.average,...radarDetection.fixed].map(r=>({...r,d:distanceToRadar(r)})).filter(r=>Number.isFinite(r.d));
@@ -1097,18 +1139,16 @@ function nearestRadar(){
   return (ahead[0] || (!Number.isFinite(heading)?all.sort((a,b)=>a.d-b.d)[0]:null)) || null;
 }
 function updateNearestRadarHUD(){
-  const dial=document.getElementById('drhCompassDial'),arrow=document.getElementById('drhArrow'),headingEl=document.querySelector('#drhCompassDial .drh-heading');
-  const typeEl=document.getElementById('drhRadarType'),distEl=document.getElementById('drhRadarDistance'),limitEl=document.getElementById('drhRadarLimit');
-  if(!dial||!arrow||!headingEl||!typeEl||!distEl||!limitEl)return;
+  // Manté els elements antics per compatibilitat amb altres pantalles; el HUD principal és la brúixola V22.
   const radar=nearestRadar(),heading=getUsableHeading();
-  if(Number.isFinite(heading)){headingEl.textContent=Math.round(heading)+'°';dial.classList.remove('no-heading')}else{headingEl.textContent='—';dial.classList.add('no-heading')}
-  if(!radar){typeEl.textContent='BUSCANT RADAR';distEl.textContent='—';limitEl.textContent='Esperant GPS';return;}
-  const bearing=bearingDeg(lastLat,lastLon,radar.lat,radar.lon);
-  const rel=Number.isFinite(heading)?relativeAngle(bearing,heading):0;
-  arrow.style.transform=`translate(-50%,-53%) rotate(${rel}deg)`;
-  typeEl.textContent=radar.type==='average'?'📡 RADAR DE TRAM':'⚠ RADAR FIX';
-  distEl.textContent=radar.d<1?(Math.round(radar.d*1000)+' m'):(radar.d.toFixed(1).replace('.',',')+' km');
-  limitEl.textContent=`LÍMIT ${radar.limit||currentVia.limite} km/h`;
+  const typeEl=document.getElementById('drhRadarType'),distEl=document.getElementById('drhRadarDistance'),limitEl=document.getElementById('drhRadarLimit');
+  if(typeEl&&distEl&&limitEl){
+    if(!radar){typeEl.textContent='BUSCANT RADAR';distEl.textContent='—';limitEl.textContent='— km/h';}
+    else{typeEl.textContent=radar.type==='average'?'RADAR DE TRAM':'RADAR FIX';distEl.textContent=radar.d<1?(Math.round(radar.d*1000)+' m'):(radar.d.toFixed(1).replace('.',',')+' km');limitEl.textContent=`LÍMIT ${radar.limit||currentVia.limite} km/h`;}
+  }
+  const dial=document.getElementById('drhCompassDial'),headingEl=document.querySelector('#drhCompassDial .drh-heading');
+  if(dial&&headingEl){headingEl.textContent=Number.isFinite(heading)?Math.round(heading)+'°':'—';dial.classList.toggle('no-heading',!Number.isFinite(heading));}
+  updateCompassRibbon();
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -1209,20 +1249,30 @@ function startGPS() {
     pos => {
       const spd = pos.coords.speed != null ? pos.coords.speed * 3.6 : null;
       if (spd != null && Number.isFinite(spd)) { rawGpsSpeed = spd; currentSpeed = applySpeedCalibration(spd); }
-      if (Number.isFinite(pos.coords.heading) && pos.coords.heading >= 0) currentHeading = pos.coords.heading;
       lastGpsTimestamp = pos.timestamp || Date.now();
-      updateNearestRadarHUD();
-      lastLat = pos.coords.latitude;
-      lastLon = pos.coords.longitude;
-      updateSegmentRadarPosition(lastLat, lastLon);
+      lastGpsAccuracy = Number.isFinite(pos.coords.accuracy) ? pos.coords.accuracy : Infinity;
+      // El curs GPS només és fiable quan hi ha moviment; a peu de carrer pot saltar molt.
+      if (Number.isFinite(pos.coords.heading) && pos.coords.heading >= 0 && currentSpeed >= 8) { currentHeading = normalizeDeg(pos.coords.heading); lastGpsHeadingAt = Date.now(); }
+      // Evita que un fix molt imprecís faci saltar la posició i canviï falsament de carretera/radar.
+      // La primera coordenada es conserva com a punt provisional fins que arribi un fix millor.
+      const acceptPosition = lastGpsAccuracy <= 65 || lastLat === null || lastLon === null;
+      if (acceptPosition) {
+        lastLat = pos.coords.latitude;
+        lastLon = pos.coords.longitude;
+        updateSegmentRadarPosition(lastLat, lastLon);
+        updateNearestRadarHUD();
+        document.getElementById('gpsCoords').textContent = lastLat.toFixed(4) + ',' + lastLon.toFixed(4);
+      } else {
+        updateCompassRibbon();
+      }
       const acc = Math.round(pos.coords.accuracy);
-      setGPSStatus('ok', `GPS ±${acc}m`);
-      document.getElementById('gpsCoords').textContent =
-        lastLat.toFixed(4) + ',' + lastLon.toFixed(4);
+      setGPSStatus(lastGpsAccuracy <= 50 ? 'ok' : 'waiting', lastGpsAccuracy <= 50 ? `GPS ±${acc}m` : `GPS imprecís ±${acc}m`);
       update();
-      // Update the real current road frequently (about every 2.5s).
-      if (!osmQuerying && Date.now()-lastRoadQueryAt >= 2500) queryOSMLimit();
-      if (!radarQuerying && (Date.now() - lastRadarQueryAt > 6000)) detectRadars();
+      // No consultis carreteres ni radars amb una posició que el GPS marca com a imprecisa.
+      if (lastGpsAccuracy <= 65) {
+        if (!osmQuerying && Date.now()-lastRoadQueryAt >= 2500) queryOSMLimit();
+        if (!radarQuerying && (Date.now() - lastRadarQueryAt > 6000)) detectRadars();
+      }
     },
     err => {
       const msgs = { 1:'Permiso denegado', 2:'Posición no disponible', 3:'Tiempo agotado' };
@@ -1243,32 +1293,52 @@ function setGPSStatus(state, text) {
   document.getElementById('gpsText').textContent = text;
 }
 
+// Cache local de cartografia i radars. El GPS continua actualitzant-se en temps real.
+const SG_ROAD_CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
+const SG_RADAR_CACHE_TTL = 24 * 60 * 60 * 1000;
+function sgCacheRead(key){try{const raw=localStorage.getItem(key);return raw?JSON.parse(raw):null;}catch{return null;}}
+function sgCacheWrite(key,value){try{localStorage.setItem(key,JSON.stringify(value));return true;}catch(e){try{const keys=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('sg_road_cache_'))keys.push(k);}keys.sort((a,b)=>(sgCacheRead(a)?.savedAt||0)-(sgCacheRead(b)?.savedAt||0));for(const k of keys.slice(0,Math.max(1,keys.length-20)))localStorage.removeItem(k);localStorage.setItem(key,JSON.stringify(value));return true;}catch{return false;}}}
+function sgRoadCacheKey(lat,lon){return 'sg_road_cache_'+Math.floor(lat*1000)+'_'+Math.floor(lon*1000);}
+function sgKmBetween(aLat,aLon,bLat,bLon){return haversineKm(aLat,aLon,bLat,bLon);}
+
 // ══════════════════════════════════════════════════════════════════
 //  OPENSTREETMAP / OVERPASS API — límite de velocidad
 // ══════════════════════════════════════════════════════════════════
 async function queryOSMLimit() {
   if (lastLat===null || lastLon===null || osmQuerying) return;
+  if (lastGpsAccuracy > 65) { const status=document.getElementById('osmStatus'); if(status)status.textContent='GPS IMPRECÍS — esperant millor senyal'; return; }
   osmQuerying=true; lastRoadQueryAt=Date.now();
+  const queryLat=lastLat,queryLon=lastLon;
   const status=document.getElementById('osmStatus'); if(status) status.textContent='⟳ VIA…';
-  const q=`[out:json][timeout:5];way(around:80,${lastLat},${lastLon})[highway][highway!~"^(footway|path|cycleway|steps|pedestrian|service)$"];out tags geom;`;
+  // Cada cel·la GPS es consulta una vegada; guardem geometria local 7 dies.
+  const roadCacheKey=sgRoadCacheKey(queryLat,queryLon);
+  const cachedRoad=sgCacheRead(roadCacheKey);
+  const q=`[out:json][timeout:5];way(around:150,${queryLat},${queryLon})[highway][highway!~"^(footway|path|cycleway|steps|pedestrian|service)$"];out tags geom;`;
   const endpoints=['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter'];
-  const pointSeg=(lat,lon,a,b)=>{const x=lon,y=lat,x1=a.lon,y1=a.lat,x2=b.lon,y2=b.lat;const dx=x2-x1,dy=y2-y1;const t=Math.max(0,Math.min(1,((x-x1)*dx+(y-y1)*dy)/(dx*dx+dy*dy||1)));const px=x1+t*dx,py=y1+t*dy;return {d:haversineKm(y,x,py,px),px,py}};
+  // Distància punt-segment en metres amb projecció local; evita errors de longitud/latitud en graus.
+  const pointSeg=(lat,lon,a,b)=>{const lat0=lat*Math.PI/180,scaleX=111320*Math.cos(lat0),scaleY=110540;const x=(lon-queryLon)*scaleX,y=(lat-queryLat)*scaleY,x1=(a.lon-queryLon)*scaleX,y1=(a.lat-queryLat)*scaleY,x2=(b.lon-queryLon)*scaleX,y2=(b.lat-queryLat)*scaleY;const dx=x2-x1,dy=y2-y1;const t=Math.max(0,Math.min(1,((x-x1)*dx+(y-y1)*dy)/(dx*dx+dy*dy||1)));const px=x1+t*dx,py=y1+t*dy;return {d:Math.hypot(x-px,y-py)/1000,px,py}};
   try{
     let data=null;
-    for(const ep of endpoints){try{const res=await fetch(ep+'?data='+encodeURIComponent(q),{signal:AbortSignal.timeout(6500)});if(!res.ok)continue;const d=await res.json();if(Array.isArray(d.elements)){data=d;break}}catch{}}
+    if(cachedRoad&&Array.isArray(cachedRoad.elements)&&Date.now()-cachedRoad.savedAt<SG_ROAD_CACHE_TTL){data={elements:cachedRoad.elements};if(status)status.textContent='● VIA LOCAL';}
+    if(!data){
+      for(const ep of endpoints){try{const res=await fetch(ep+'?data='+encodeURIComponent(q),{signal:AbortSignal.timeout(6500)});if(!res.ok)continue;const d=await res.json();if(Array.isArray(d.elements)){data=d;break}}catch{}}
+      if(data)sgCacheWrite(roadCacheKey,{savedAt:Date.now(),lat:queryLat,lon:queryLon,elements:data.elements});
+    }
+    if(!data && cachedRoad&&Array.isArray(cachedRoad.elements)){data={elements:cachedRoad.elements};if(status)status.textContent='⚠ VIA LOCAL ANTIGA';}
     if(!data) throw new Error('no data');
+    // No apliquis una resposta antiga si el vehicle ja s'ha mogut força durant la consulta.
+    if(haversineKm(queryLat,queryLon,lastLat,lastLon)>0.12){ if(status)status.textContent='⟳ ACTUALITZANT POSICIÓ'; return; }
     const candidates=[];
     for(const e of data.elements||[]){
       if(e.type!=='way'||!e.geometry?.length) continue;
       let best={d:Infinity,bearing:null};
       for(let i=0;i<e.geometry.length-1;i++){
-        const a=e.geometry[i],b=e.geometry[i+1],seg=pointSeg(lastLat,lastLon,a,b); if(seg.d<best.d) best={d:seg.d,bearing:bearingDeg(a.lat,a.lon,b.lat,b.lon)};
+        const a=e.geometry[i],b=e.geometry[i+1],seg=pointSeg(queryLat,queryLon,a,b); if(seg.d<best.d) best={d:seg.d,bearing:bearingDeg(a.lat,a.lon,b.lat,b.lon)};
       }
       const tags=e.tags||{}; const roadBearing=best.bearing; const diff=Number.isFinite(currentHeading)&&Number.isFinite(roadBearing)?angleDiff(currentHeading,roadBearing):90;
-      const dirPenalty=Number.isFinite(currentHeading)?Math.min(diff,Math.abs(180-diff))*0.35:0;
       const speed=parseMaxspeed(tags.maxspeed||tags['maxspeed:forward']||tags['maxspeed:lanes']);
       const named=tags.ref||tags.name;
-      const score=best.d*1000 + dirPenalty - (speed?12:0) - (named?3:0) + (tags.oneway==='yes'&&diff>90?20:0);
+      const roadDirDiff=Number.isFinite(currentHeading)&&Number.isFinite(roadBearing)?Math.min(diff,180-diff):90; const score=best.d*1000 + roadDirDiff*0.35 - (speed?12:0) - (named?3:0) + (tags.oneway==='yes'&&diff>90?20:0);
       candidates.push({e,d:best.d,bearing:roadBearing,diff,speed,score});
     }
     candidates.sort((a,b)=>a.score-b.score); const c=candidates[0];
@@ -1277,7 +1347,7 @@ async function queryOSMLimit() {
       updateRoadDiagnostic(); if(status)status.textContent='– VIA NO SEGURA'; return;
     }
     const t=c.e.tags||{}; const limit=c.speed||null; const ref=t.ref||''; const name=t.name||'';
-    roadDetection={ref,name,limit,highway:t.highway||'',distanceM:c.d*1000,bearing:c.bearing,headingDiff:c.diff,source:'OSM',updatedAt:Date.now(),confidence:(c.d<.025&&c.diff<45)?'ok':(c.d<.06&&c.diff<75)?'warn':'bad'};
+    roadDetection={ref,name,limit,highway:t.highway||'',distanceM:c.d*1000,bearing:c.bearing,headingDiff:c.diff,source:'OSM',updatedAt:Date.now(),confidence:(c.d<.025&&Math.min(c.diff,180-c.diff)<45)?'ok':(c.d<.06&&Math.min(c.diff,180-c.diff)<75)?'warn':'bad'};
     if(ref) currentRoadRef=ref; if(name) currentRoadName=name;
     updateRoadDiagnostic(); updateMobileZoneHUD();
     if(limit){
@@ -1314,12 +1384,22 @@ async function detectRadars(){
   const query=`[out:json][timeout:10];(node(around:8000,${lastLat},${lastLon})[highway=speed_camera];rel(around:8000,${lastLat},${lastLon})[type=enforcement][enforcement=average_speed];rel(around:8000,${lastLat},${lastLon})[enforcement=average_speed];);out body;>;out body;`;
   const endpoints=['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter'];
   try{
+    // La mateixa cobertura de radars es reutilitza fins a 24 h mentre som a menys de 4 km del centre.
+    const radarCache=sgCacheRead('sg_radar_cache_v23');
+    if(radarCache&&Array.isArray(radarCache.fixed)&&Array.isArray(radarCache.average)&&Date.now()-radarCache.savedAt<SG_RADAR_CACHE_TTL&&sgKmBetween(lastLat,lastLon,radarCache.lat,radarCache.lon)<4){
+      radarDetection.fixed=radarCache.fixed;radarDetection.average=radarCache.average;
+      checkRadarProximity();updateNearestRadarHUD();updateRadarScanHUD('● RADARS EN MEMÒRIA LOCAL');return;
+    }
     let data=null; for(const ep of endpoints){try{const res=await fetch(ep+'?data='+encodeURIComponent(query),{signal:AbortSignal.timeout(12000)});if(!res.ok)continue;const c=await res.json();if(c&&Array.isArray(c.elements)){data=c;break}}catch{}}
-    if(!data)return;
+    if(!data){
+      if(radarCache&&Array.isArray(radarCache.fixed)&&Array.isArray(radarCache.average)&&Date.now()-radarCache.savedAt<7*24*60*60*1000&&sgKmBetween(lastLat,lastLon,radarCache.lat,radarCache.lon)<7){radarDetection.fixed=radarCache.fixed;radarDetection.average=radarCache.average;checkRadarProximity();updateNearestRadarHUD();updateRadarScanHUD('⚠ RADARS LOCALS · DADES ANTIGUES');}
+      return;
+    }
     const nodes=new Map(),ways=new Map(),rels=[]; for(const e of(data.elements||[])){if(e.type==='node'&&e.lat!=null)nodes.set(e.id,e);else if(e.type==='way')ways.set(e.id,e);else if(e.type==='relation')rels.push(e)}
     radarDetection.fixed=(data.elements||[]).filter(e=>e.type==='node'&&e.tags?.highway==='speed_camera').map(e=>({id:'f'+e.id,lat:e.lat,lon:e.lon,limit:parseMaxspeed(e.tags?.maxspeed)||currentVia.limite,type:'fixed'})); radarDetection.average=[];
     for(const rel of rels){let from=null,to=null,sectionNodes=[];for(const m of(rel.members||[])){if(m.type==='node'&&nodes.has(m.ref)){if(m.role==='from')from=nodes.get(m.ref);if(m.role==='to')to=nodes.get(m.ref)}if(m.role==='section'&&m.type==='way'&&ways.has(m.ref)){const wn=ways.get(m.ref).nodes||[];if(wn.length){const a=nodes.get(wn[0]),b=nodes.get(wn[wn.length-1]);if(a)sectionNodes.push(a);if(b)sectionNodes.push(b)}}}if(!from&&sectionNodes.length)from=sectionNodes[0];if(!to&&sectionNodes.length)to=sectionNodes[sectionNodes.length-1];if(!from||!to)continue;const limit=parseMaxspeed(rel.tags?.maxspeed||rel.tags?.['maxspeed:enforcement'])||currentVia.limite,total=haversineKm(from.lat,from.lon,to.lat,to.lon);if(total<.1)continue;radarDetection.average.push({id:'a'+rel.id,lat:from.lat,lon:from.lon,toLat:to.lat,toLon:to.lon,totalKm:total,limit,type:'average',path:sectionNodes.map(n=>({lat:n.lat,lon:n.lon}))})}
-    checkRadarProximity();updateNearestRadarHUD();updateRadarScanHUD();
+    sgCacheWrite('sg_radar_cache_v23',{savedAt:Date.now(),lat:lastLat,lon:lastLon,fixed:radarDetection.fixed,average:radarDetection.average});
+    checkRadarProximity();updateNearestRadarHUD();updateRadarScanHUD('● RADARS ACTUALITZATS');
   }catch(e){updateRadarScanHUD('⚠ RADARS: dades no disponibles')}finally{radarQuerying=false}
 }
 function updateRadarScanHUD(message){const hud=document.getElementById('drivingRadarHUD'),live=document.getElementById('drhLive'),alert=document.getElementById('drhAlert');if(!hud||!live||!alert||segmentRadar.active)return;live.style.display='none';alert.textContent=message||T().scanning(radarDetection.fixed.length+radarDetection.average.length);hud.classList.add('visible')}
