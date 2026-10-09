@@ -401,6 +401,11 @@
     body.driving-mode #driveModeBtn { background:rgba(255,255,255,.035); border-color:var(--border); color:var(--text); }
     body.driving-mode #secondaryControls { display:none !important; }
     body.driving-mode #viaSection { display:none; }
+    body.driving-mode #sancionCard { display:none !important; }
+    body.driving-mode #segmentCard:not(.auto-hidden) { margin-top:8px; }
+    body.driving-mode #roadDiagnostic { margin-top:6px; }
+    body.driving-mode .health-indicators { gap:4px; }
+    body.driving-mode .health-chip { font-size:9px; padding:3px 5px; }
     body.driving-mode #sancionCard { margin-top:10px; padding:12px 13px; }
     body.driving-mode .sancion-label { font-size:16px; }
     body.driving-mode .sancion-desc { font-size:12px; }
@@ -411,6 +416,12 @@
       body.driving-mode .speed-value { font-size:clamp(92px,30vw,150px); }
       body.driving-mode #sancionCard { margin-bottom:10px; }
     }
+
+    
+    .road-confidence{font-size:10px;font-weight:900;letter-spacing:.4px;padding:5px 8px;border-radius:6px;margin-top:5px;background:rgba(255,149,0,.12);color:#ffbf69}
+    .road-confidence.ok{background:rgba(0,255,136,.10);color:#00ff88}
+    .road-confidence.warn{background:rgba(255,229,0,.12);color:#ffe500}
+    .road-confidence.bad{background:rgba(255,59,48,.12);color:#ff716a}
 
     /* ── FULL-WIDTH COMPASS + RADAR MARKERS V22 ─────────── */
     #drhCompassWrap{display:block;width:100%;box-sizing:border-box;padding:7px 0 6px;margin:0;border-bottom:1px solid rgba(255,255,255,.12);background:linear-gradient(180deg,rgba(0,255,136,.07),rgba(0,0,0,.12));overflow:hidden}
@@ -425,6 +436,8 @@
     .compass-radar-marker{position:absolute;top:1px;transform:translateX(-50%);z-index:4;font-size:18px;line-height:19px;filter:drop-shadow(0 0 4px rgba(0,0,0,.9));display:none}
     .compass-radar-marker.active{display:block}
     .compass-radar-marker.fixed{color:#ffe56d}.compass-radar-marker.average{color:#8adfff}
+    .compass-radar-marker .radar-distance{position:absolute;top:19px;left:50%;transform:translateX(-50%);font:900 10px/1.1 'Share Tech Mono',monospace;white-space:nowrap;color:#fff;background:rgba(0,0,0,.88);border:1px solid rgba(255,255,255,.28);border-radius:5px;padding:3px 4px;letter-spacing:-.3px;pointer-events:none}
+    .compass-radar-marker.fixed .radar-distance{border-color:#ffe56d}.compass-radar-marker.average .radar-distance{border-color:#8adfff}
     .ribbon-legend{display:flex;justify-content:space-around;align-items:center;gap:4px;padding:6px 4px 0;font:800 10px 'Rajdhani',sans-serif;color:#9fb0b2}
     .ribbon-legend span{display:flex;align-items:center;justify-content:center;gap:4px;flex:1;min-width:0;text-align:center;white-space:nowrap}
     .ribbon-legend .legend-icon{font-size:17px;line-height:1}
@@ -619,7 +632,7 @@ body.driving-mode #drivingRadarHUD{display:block}
   <div id="titleBar">
     <div class="tb-left">
       <div class="tb-dot" id="statusDot"></div>
-      <span class="tb-title">SPEEDGUARD <span class="app-version">V25.1 · AUTO</span></span>
+      <span class="tb-title">SPEEDGUARD <span class="app-version">V28 · AUTO</span></span>
     </div>
     <div class="tb-actions">
       <button class="tb-btn" id="minimizeBtn" title="Minimizar">_</button>
@@ -633,8 +646,8 @@ body.driving-mode #drivingRadarHUD{display:block}
       <div class="direction-ribbon-head"><span>RUMB</span><strong id="drhDrivingDirection">—</strong><span id="drhDrivingDegrees">—°</span></div>
       <div class="direction-ribbon" id="directionRibbon" aria-label="Brúixola">
         <span class="compass-cardinal north" id="compassN">N</span><span class="compass-cardinal" id="compassE">E</span><span class="compass-cardinal" id="compassS">S</span><span class="compass-cardinal" id="compassW">O</span>
-        <span class="compass-radar-marker fixed" id="compassFixedMarker" title="Radar fix">📷</span>
-        <span class="compass-radar-marker average" id="compassAverageMarker" title="Radar de tram">🚦</span>
+        <span class="compass-radar-marker fixed" id="compassFixedMarker" title="Radar fix">📷<span class="radar-distance" id="compassFixedDistance">—</span></span>
+        <span class="compass-radar-marker average" id="compassAverageMarker" title="Radar de tram">🚦<span class="radar-distance" id="compassAverageDistance">—</span></span>
         <div class="compass-heading-marker" aria-hidden="true"></div>
       </div>
       <div class="ribbon-legend">
@@ -663,6 +676,7 @@ body.driving-mode #drivingRadarHUD{display:block}
   <div id="roadDiagnostic" class="road-diagnostic" aria-live="polite">
     <div class="road-main"><span class="road-name" id="roadDiagnosticName">VIA NO DETECTADA</span><span class="road-limit" id="roadDiagnosticLimit">—</span></div>
     <div class="road-meta" id="roadDiagnosticMeta">Esperant GPS…</div>
+    <div class="road-confidence" id="roadConfidence" role="status" aria-live="polite">CONFIANÇA VIA: ESPERANT</div>
   </div>
 
   <div id="tripSummaryModal" aria-live="polite">
@@ -670,7 +684,7 @@ body.driving-mode #drivingRadarHUD{display:block}
       <h2>RESUM DEL VIATGE</h2>
       <div class="trip-summary-sub" id="tripSummarySub">Radars detectats durant el viatge</div>
       <div id="tripSummaryRows"></div>
-      <button class="trip-close" type="button" onclick="closeTripSummary()">TANCAR</button>
+      <button class="trip-close" type="button" onclick="showTripHistory()">CONSULTAR VIATGES ANTERIORS</button><div id="tripHistoryList" style="margin-top:10px"></div><button class="trip-close" type="button" onclick="closeTripSummary()">TANCAR</button>
     </div>
   </div>
 
@@ -791,12 +805,12 @@ body.driving-mode #drivingRadarHUD{display:block}
       <div class="halo-settings">
         <div class="section-title">💡 IL·LUMINACIÓ DEL MARC</div>
         <div class="halo-preview" id="haloPreview"></div>
-        <div class="halo-setting"><div class="halo-setting-head"><strong>Gruix</strong><span id="haloWidthValue">18 px</span></div><input class="halo-range" id="haloWidthRange" type="range" min="4" max="40" step="1"></div>
-        <div class="halo-setting"><div class="halo-setting-head"><strong>Brillantor</strong><span id="haloIntensityValue">100%</span></div><input class="halo-range" id="haloIntensityRange" type="range" min="30" max="180" step="5"></div>
-        <div class="halo-setting"><div class="halo-setting-head"><strong>Glow</strong><span id="haloGlowValue">38 px</span></div><input class="halo-range" id="haloGlowRange" type="range" min="0" max="120" step="2"></div>
-        <div class="halo-setting"><div class="halo-setting-head"><strong>Degradat cap al centre</strong><span id="haloGradientValue">55%</span></div><input class="halo-range" id="haloGradientRange" type="range" min="10" max="90" step="5"></div>
-        <div class="halo-setting"><div class="halo-setting-head"><strong>Intensitat del feix</strong><span id="haloBeamValue">95%</span></div><input class="halo-range" id="haloBeamRange" type="range" min="10" max="100" step="5"></div>
-        <div class="halo-setting"><div class="halo-setting-head"><strong>Velocitat del moviment</strong><span id="haloSpeedValue">1×</span></div><input class="halo-range" id="haloSpeedRange" type="range" min="0" max="200" step="10"></div>
+        <div class="halo-setting"><div class="halo-setting-head"><strong>Gruix</strong><span id="haloWidthValue">18 px</span></div><input class="halo-range" id="haloWidthRange" type="range" min="1" max="24" step="1"></div>
+        <div class="halo-setting"><div class="halo-setting-head"><strong>Brillantor</strong><span id="haloIntensityValue">100%</span></div><input class="halo-range" id="haloIntensityRange" type="range" min="5" max="100" step="1"></div>
+        <div class="halo-setting"><div class="halo-setting-head"><strong>Glow</strong><span id="haloGlowValue">38 px</span></div><input class="halo-range" id="haloGlowRange" type="range" min="0" max="60" step="1"></div>
+        <div class="halo-setting"><div class="halo-setting-head"><strong>Degradat cap al centre</strong><span id="haloGradientValue">55%</span></div><input class="halo-range" id="haloGradientRange" type="range" min="2" max="60" step="1"></div>
+        <div class="halo-setting"><div class="halo-setting-head"><strong>Intensitat del feix</strong><span id="haloBeamValue">95%</span></div><input class="halo-range" id="haloBeamRange" type="range" min="5" max="100" step="1"></div>
+        <div class="halo-setting"><div class="halo-setting-head"><strong>Velocitat del moviment</strong><span id="haloSpeedValue">1×</span></div><input class="halo-range" id="haloSpeedRange" type="range" min="0" max="200" step="5"></div>
         <div class="halo-preset-row"><button class="via-btn" onclick="setHaloPreset('discret')">Discret</button><button class="via-btn" onclick="setHaloPreset('normal')">Normal</button><button class="via-btn" onclick="setHaloPreset('intens')">Intens</button></div>
         <button class="reset-btn" style="margin-top:7px" onclick="resetHaloSettings()">↺ Restaurar il·luminació</button>
       </div>
@@ -945,7 +959,9 @@ let osmQuerying  = false;
 let segmentRadar = { active:false, totalKm:5, limitKmh:120, distanceKm:0, startTime:0, lastLat:null, lastLon:null, completed:false };
 let radarDetection = { fixed:[], average:[], alerted:new Set(), lastQueryLat:null, lastQueryLon:null, lastAlertAt:0, lastAlertByKey:{}, activeAverageId:null };
 let roadDetection = {ref:'',name:'',limit:null,highway:'',distanceM:null,bearing:null,headingDiff:null,source:'OSM',updatedAt:0,confidence:'bad'};
-let tripRadarLog=[]; let tripStartedAt=Date.now(); let loggedRadarIds=new Set(); let lastRoadQueryAt=0; let completedAverageRadars=new Map();
+let tripRadarLog=[]; let tripStartedAt=Date.now(); let loggedRadarIds=new Set(); let tripDistanceKm=0; let lastTripLat=null; let lastTripLon=null; let lastRoadQueryAt=0; let completedAverageRadars=new Map();
+let tripDiagnosticLog=[]; const TRIP_DIAGNOSTICS_KEY='sg_trip_diagnostics_v1';
+function logTripDiagnostic(type,message,extra={}){const item={time:Date.now(),type:String(type),message:String(message),...extra};tripDiagnosticLog.push(item);if(tripDiagnosticLog.length>300)tripDiagnosticLog=tripDiagnosticLog.slice(-300);try{localStorage.setItem(TRIP_DIAGNOSTICS_KEY,JSON.stringify(tripDiagnosticLog));}catch(e){console.warn('No s’ha pogut desar el diagnòstic',e);}}
 let radarQuerying = false;
 let lastRadarQueryAt = 0;
 
@@ -1086,7 +1102,7 @@ function applyDrivingMode() {
   if (btn) { btn.textContent = drivingMode ? '✓ MODO CONDUCCIÓN ACTIVO' : '🚗 ACTIVAR MODO CONDUCCIÓN'; btn.classList.toggle('active', drivingMode); }
   if (status) status.textContent = drivingMode ? 'VIGILANDO' : 'LISTO';
 }
-async function exitDrivingMode(){ drivingMode=false; localStorage.setItem('sg_driving_mode','0'); await releaseScreenWakeLock(); applyDrivingMode(); const mc=document.getElementById('mainContent'); if(mc) mc.scrollTop=0; if(tripRadarLog.length) showTripSummary(); }
+async function exitDrivingMode(){ drivingMode=false; localStorage.setItem('sg_driving_mode','0'); await releaseScreenWakeLock(); applyDrivingMode(); const mc=document.getElementById('mainContent'); if(mc) mc.scrollTop=0; if(Date.now()-tripStartedAt>15000){saveCompletedTrip();showTripSummary();} }
 async function toggleDrivingMode() {
   drivingMode = !drivingMode;
   localStorage.setItem('sg_driving_mode', drivingMode ? '1' : '0');
@@ -1137,12 +1153,14 @@ function closestRadarOfType(list, type){
   if(lastLat===null||lastLon===null)return null;
   return (list||[]).map(r=>({...r,d:distanceToRadar(r)})).filter(r=>Number.isFinite(r.d)&&(!Number.isFinite(getUsableHeading())||angleDiff(getUsableHeading(),bearingDeg(lastLat,lastLon,r.lat,r.lon))<=120)).sort((a,b)=>a.d-b.d)[0]||null;
 }
+function formatRadarDistance(m){ if(!Number.isFinite(m)||m<0)return '—'; return m>=1000?(m/1000).toFixed(1).replace('.',',')+' km':Math.round(m)+' m'; }
 function setCompassMarker(id,radar,heading){
   const el=document.getElementById(id);if(!el)return;
-  if(!radar||!Number.isFinite(heading)||lastLat===null||lastLon===null){el.classList.remove('active');return;}
+  const label=document.getElementById(id==='compassFixedMarker'?'compassFixedDistance':'compassAverageDistance');
+  if(!radar||!Number.isFinite(heading)||lastLat===null||lastLon===null){el.classList.remove('active');if(label)label.textContent='—';return;}
   const rel=relativeAngle(bearingDeg(lastLat,lastLon,radar.lat,radar.lon),heading);
-  // Visible half-circle: forward is center, sides are +/-90°, rear radars sit at the edges.
-  const x=Math.max(4,Math.min(96,50+(rel/180)*46));el.style.left=x+'%';el.classList.add('active');
+  // Prioritza la lectura clara: icona i distància en una etiqueta compacta.
+  const x=Math.max(5,Math.min(95,50+(rel/180)*46));el.style.left=x+'%';el.classList.add('active');if(label)label.textContent=formatRadarDistance(radar.d*1000);
 }
 function updateCompassRibbon(){
   const heading=getUsableHeading();
@@ -1297,6 +1315,7 @@ function startGPS() {
           const accuracy = Number.isFinite(coords.accuracy) ? coords.accuracy : Infinity;
           lastGpsAccuracy = accuracy;
           lastGpsTimestamp = pos.timestamp || Date.now();
+          if(accuracy>65) logTripDiagnostic('gps','GPS amb precisió baixa',{accuracy:Math.round(accuracy)});
           const spd = coords.speed != null ? coords.speed * 3.6 : null;
           if (spd != null && Number.isFinite(spd)) { rawGpsSpeed = spd; currentSpeed = applySpeedCalibration(spd); }
           if (Number.isFinite(coords.heading) && coords.heading >= 0 && currentSpeed >= 8) {
@@ -1313,6 +1332,7 @@ function startGPS() {
 
           // Aïllem cada actualització visual: un component trencat no ha d'aturar el GPS.
           try { update(); } catch (e) { console.warn('Error actualitzant velocitat/HUD', e); }
+          try { if(lastTripLat!==null&&lastTripLon!==null){const td=haversineKm(lastTripLat,lastTripLon,lat,lon);if(td>=0.003&&td<=0.2)tripDistanceKm+=td;} lastTripLat=lat;lastTripLon=lon; } catch(e) { console.warn('Error calculant distància del viatge',e); }
           try { updateCompassRibbon(); } catch (e) { console.warn('Error actualitzant brúixola', e); }
           try { updateSegmentRadarPosition(lastLat, lastLon); } catch (e) { console.warn('Error actualitzant radar de tram', e); }
           try { updateNearestRadarHUD(); } catch (e) { console.warn('Error actualitzant HUD de radars', e); }
@@ -1398,6 +1418,7 @@ function forceGPSReconnect() {
 }
 
 function setGPSStatus(state, text) {
+  const prev=document.getElementById('gpsText')?.textContent||''; if(state==='error' || (state==='waiting' && /actiu|precisió/i.test(prev))) logTripDiagnostic('gps-status',text,{state});
   const dot = document.getElementById('gpsDot');
   dot.className = 'gps-dot ' + state;
   document.getElementById('gpsText').textContent = text;
@@ -1407,8 +1428,8 @@ function setHealthChip(id,state,text){const el=document.getElementById(id);if(el
 function updateInternetIndicator(){setHealthChip('healthInternet',navigator.onLine?'ok':'error','Internet: '+(navigator.onLine?'connectat':'sense connexió'));}
 window.addEventListener('online',updateInternetIndicator);window.addEventListener('offline',updateInternetIndicator);
 updateInternetIndicator();
-function markMapDataUpdated(){setHealthChip('healthMap','ok','Cartografia: '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}));}
-function markRadarDataUpdated(){setHealthChip('healthMap','ok','Dades: radars '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}));}
+function markMapDataUpdated(){setHealthChip('healthMap','ok','Cartografia: '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}));logTripDiagnostic('map','Cartografia actualitzada');}
+function markRadarDataUpdated(){setHealthChip('healthMap','ok','Dades: radars '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}));logTripDiagnostic('radars','Dades de radars actualitzades');}
 
 // Cache local de cartografia i radars. El GPS continua actualitzant-se en temps real.
 const SG_ROAD_CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
@@ -1480,9 +1501,11 @@ async function queryOSMLimit(forceRefresh = false) {
 function updateRoadDiagnostic(){
   const box=document.getElementById('roadDiagnostic'); if(!box)return; const n=document.getElementById('roadDiagnosticName'),l=document.getElementById('roadDiagnosticLimit'),m=document.getElementById('roadDiagnosticMeta');
   const label=roadDetection.ref||roadDetection.name||'VIA NO DETECTADA'; n.textContent=label; l.textContent=roadDetection.limit?roadDetection.limit+' km/h':'—';
-  const age=roadDetection.updatedAt?Math.max(0,(Date.now()-roadDetection.updatedAt)/1000):999; const d=Number.isFinite(roadDetection.distanceM)?Math.round(roadDetection.distanceM):null; const hd=Number.isFinite(roadDetection.headingDiff)?Math.round(roadDetection.headingDiff):null;
+  const age=roadDetection.updatedAt?Math.max(0,(Date.now()-roadDetection.updatedAt)/1000):999; if(age>180 && roadDetection.confidence!=='bad'){roadDetection.confidence='bad';roadDetection.limit=null;currentRoadRef='';currentRoadName='';} const d=Number.isFinite(roadDetection.distanceM)?Math.round(roadDetection.distanceM):null; const hd=Number.isFinite(roadDetection.headingDiff)?Math.round(roadDetection.headingDiff):null;
   const state=roadDetection.confidence==='ok'?'VIA ACTUAL CONFIRMADA':roadDetection.confidence==='warn'?'VIA PROBABLE — comprovant direcció':'VIA NO CONFIRMADA';
   box.className='road-diagnostic visible '+roadDetection.confidence; m.textContent=`${state} · ${d!==null?d+' m del tram':''}${hd!==null?' · direcció '+hd+'°':''} · actualitzat fa ${age.toFixed(1)} s`;
+  const confidence=document.getElementById('roadConfidence');if(confidence){const c=roadDetection.confidence;confidence.className='road-confidence '+c;confidence.textContent=c==='ok'?'✓ VIA CONFIRMADA':c==='warn'?'! VIA PROBABLE · NO CONFIAR NOMÉS EN AQUEST LÍMIT':'⚠ VIA NO CONFIRMADA · LÍMIT NO VERIFICAT';}
+  const prev=window.__sgLastRoadConfidence;if(prev!==roadDetection.confidence){window.__sgLastRoadConfidence=roadDetection.confidence;logTripDiagnostic('road-confidence',state,{confidence:roadDetection.confidence,road:roadDetection.ref||roadDetection.name||'',limit:roadDetection.limit||null});}
 }
 
 function speakRadar(text) {
@@ -1564,20 +1587,37 @@ function updateRouteHUD(r){
   }
   if(alertSettings.mobileZones && getSctMobileZone()){ zone.style.display='block'; zone.style.left='8%'; zone.style.width='84%'; } else zone.style.display='none';
 }
+const TRIP_HISTORY_KEY='sg_trip_history_v1';
+function loadTripHistory(){try{const a=JSON.parse(localStorage.getItem(TRIP_HISTORY_KEY)||'[]');return Array.isArray(a)?a:[]}catch{return []}}
 function logRadarPass(r,kind,speed=currentSpeed,extra=''){
   if(!r||loggedRadarIds.has(r.id)) return;
   loggedRadarIds.add(r.id);
   tripRadarLog.push({time:Date.now(),id:r.id,type:kind,ref:r.ref||'',name:r.name||'',limit:r.limit||null,speed:Math.round(speed||0),average:extra||''});
-  localStorage.setItem('sg_trip_radar_log',JSON.stringify(tripRadarLog));
+  try{localStorage.setItem('sg_trip_radar_log',JSON.stringify(tripRadarLog));}catch(e){console.warn('No s’ha pogut desar el radar',e)}
 }
-function showTripSummary(){
-  const modal=document.getElementById('tripSummaryModal'),rows=document.getElementById('tripSummaryRows'),sub=document.getElementById('tripSummarySub'); if(!modal||!rows)return;
-  sub.textContent=`${tripRadarLog.length} radar(s) registrat(s) · ${new Date(tripStartedAt).toLocaleTimeString()} → ${new Date().toLocaleTimeString()}`;
-  rows.innerHTML=tripRadarLog.length?tripRadarLog.map(x=>`<div class="trip-row"><div><div class="rname">${x.type==='fixed'?'⚠ RADAR FIX':'📡 RADAR DE TRAM'} ${x.ref||x.name||''}</div><div class="rmeta">${new Date(x.time).toLocaleTimeString()} · límit ${x.limit||'—'} km/h${x.average?` · ${x.average}`:''}</div></div><div class="rspeed">${x.speed}</div><div>km/h</div></div>`).join(''):'<div class="trip-summary-sub">No s’ha registrat cap radar.</div>';
+function saveCompletedTrip(){
+  if(!tripStartedAt||Date.now()-tripStartedAt<15000)return null;
+  const history=loadTripHistory();
+  const trip={id:'trip_'+tripStartedAt,start:tripStartedAt,end:Date.now(),radars:tripRadarLog.slice(),diagnostics:tripDiagnosticLog.slice(),distanceKm:Number.isFinite(tripDistanceKm)?Number(tripDistanceKm.toFixed(2)):null,durationSeconds:Math.max(0,Math.round((Date.now()-tripStartedAt)/1000)),gpsAccuracyM:Number.isFinite(lastGpsAccuracy)?Math.round(lastGpsAccuracy):null};
+  if(!history.some(x=>x.id===trip.id)){history.unshift(trip);try{localStorage.setItem(TRIP_HISTORY_KEY,JSON.stringify(history.slice(0,100)));}catch(e){console.warn('No s’ha pogut desar l’historial de viatges',e)}}
+  return trip;
+}
+function renderTripSummary(trip){
+  const modal=document.getElementById('tripSummaryModal'),rows=document.getElementById('tripSummaryRows'),sub=document.getElementById('tripSummarySub');if(!modal||!rows||!sub)return;
+  const start=trip.start||tripStartedAt,end=trip.end||Date.now(),logs=trip.radars||tripRadarLog;
+  const mins=Math.max(0,Math.round((end-start)/60000));const diags=trip.diagnostics||[];sub.textContent=`${logs.length} radar(s) · ${new Date(start).toLocaleString()} → ${new Date(end).toLocaleTimeString()} · ${mins} min${trip.distanceKm!=null?' · '+trip.distanceKm.toLocaleString()+' km':''}${trip.gpsAccuracyM!=null?' · GPS ±'+trip.gpsAccuracyM+' m':''} · ${diags.length} incidència/es tècnica/ques`; let diagEl=document.getElementById('tripDiagnosticRows');if(!diagEl){diagEl=document.createElement('div');diagEl.id='tripDiagnosticRows';diagEl.style.cssText='margin-top:14px;border-top:1px solid #243638;padding-top:10px';rows.parentNode.insertBefore(diagEl,rows.nextSibling);}diagEl.innerHTML=diags.length?'DIAGNÒSTIC DEL TRAJECTE\n'+diags.slice(-30).map(x=>new Date(x.time).toLocaleTimeString()+' · '+String(x.type).replace(/[<>]/g,'')+' · '+String(x.message).replace(/[<>]/g,'')).join('\n'):'Sense incidències tècniques registrades.';
+  rows.innerHTML=logs.length?logs.map(x=>`<div class="trip-row"><div><div class="rname">${x.type==='fixed'?'⚠ RADAR FIX':'📡 RADAR DE TRAM'} ${x.ref||x.name||''}</div><div class="rmeta">${new Date(x.time).toLocaleTimeString()} · límit ${x.limit||'—'} km/h${x.average?` · ${x.average}`:''}</div></div><div class="rspeed">${x.speed}</div><div>km/h</div></div>`).join(''):'<div class="trip-summary-sub">No s’ha registrat cap radar en aquest viatge.</div>';
   modal.classList.add('visible');
 }
+function showTripSummary(){saveCompletedTrip();renderTripSummary({start:tripStartedAt,end:Date.now(),radars:tripRadarLog.slice()});showTripHistory();}
+function showTripHistory(){
+  const el=document.getElementById('tripHistoryList');if(!el)return;const history=loadTripHistory();
+  if(!history.length){el.innerHTML='<div class="trip-summary-sub">Encara no hi ha viatges desats.</div>';return;}
+  el.innerHTML='<div style="font-weight:900;margin:10px 0;color:#9fffd8">HISTORIAL DESAT</div>'+history.map((t,i)=>`<button type="button" class="trip-close" style="text-align:left;margin-top:5px" onclick="openSavedTrip(${i})">${new Date(t.start).toLocaleDateString()} · ${new Date(t.start).toLocaleTimeString()} · ${(t.radars||[]).length} radars${t.distanceKm!=null?' · '+t.distanceKm+' km':''}</button>`).join('');
+}
+function openSavedTrip(i){const t=loadTripHistory()[i];if(t)renderTripSummary(t)}
 function closeTripSummary(){document.getElementById('tripSummaryModal')?.classList.remove('visible');}
-function startNewTrip(){tripStartedAt=Date.now();tripRadarLog=[];loggedRadarIds=new Set();localStorage.removeItem('sg_trip_radar_log');}
+function startNewTrip(){tripStartedAt=Date.now();tripRadarLog=[];tripDiagnosticLog=[];loggedRadarIds=new Set();tripDistanceKm=0;lastTripLat=null;lastTripLon=null;try{localStorage.removeItem('sg_trip_radar_log');localStorage.removeItem(TRIP_DIAGNOSTICS_KEY)}catch{}logTripDiagnostic('trip','Trajecte iniciat');}
 
 function checkRadarProximity(){
   if(lastLat===null||lastLon===null)return;
@@ -1586,10 +1626,11 @@ function checkRadarProximity(){
   const mobileZone=updateMobileZoneHUD();
   const zoneKey=mobileZone ? normRef(mobileZone.ref) : null;
   if(zoneKey && zoneKey!==lastMobileZoneKey){
-    lastMobileZoneKey=zoneKey;
+    lastMobileZoneKey=zoneKey;logTripDiagnostic('mobile-zone','Entrada a zona de vigilància mòbil',{road:zoneKey});
     if(alertSettings.mobileZones && alertSettings.visual) showRadarAlert(T().mobile(),'danger');
     if(alertSettings.mobileZones && alertSettings.voice && now-lastMobileAlertAt>8000){lastMobileAlertAt=now;speakRadar(mobileZoneVoice());}
   } else if(!zoneKey){
+    if(lastMobileZoneKey) logTripDiagnostic('mobile-zone','Sortida de zona de vigilància mòbil',{road:lastMobileZoneKey});
     lastMobileZoneKey=null;
     const hud=document.getElementById('drivingRadarHUD');
     if(hud && !segmentRadar.active) hud.classList.remove('danger');
@@ -1974,8 +2015,8 @@ document.getElementById('minimizeBtn').addEventListener('click', () => {
 // ══════════════════════════════════════════════════════════════════
 //  HALO CONFIGURATION
 // ══════════════════════════════════════════════════════════════════
-const DEFAULT_HALO_SETTINGS = { width:9, intensity:82, glow:24, gradient:48, beam:80, speed:100 };
-const HALO_SETTINGS_VERSION = 2;
+const DEFAULT_HALO_SETTINGS = { width:3, intensity:35, glow:8, gradient:18, beam:35, speed:70 };
+const HALO_SETTINGS_VERSION = 3;
 let haloSettings = {...DEFAULT_HALO_SETTINGS, ...(JSON.parse(localStorage.getItem('sg_halo_settings') || '{}'))};
 if (Number(localStorage.getItem('sg_halo_settings_version') || 0) < HALO_SETTINGS_VERSION) {
   haloSettings = {...DEFAULT_HALO_SETTINGS};
@@ -2011,7 +2052,7 @@ function bindHaloControls() {
 }
 
 function setHaloPreset(name){
-  const presets={discret:{width:6,intensity:55,glow:14,gradient:32,beam:55,speed:70},normal:{width:9,intensity:82,glow:24,gradient:48,beam:80,speed:100},intens:{width:18,intensity:135,glow:60,gradient:70,beam:100,speed:160}};
+  const presets={discret:{width:2,intensity:20,glow:4,gradient:10,beam:20,speed:50},normal:{width:4,intensity:40,glow:10,gradient:22,beam:45,speed:85},intens:{width:10,intensity:85,glow:36,gradient:48,beam:90,speed:150}};
   haloSettings={...presets[name]}; applyHaloSettings();
 }
 function resetHaloSettings(){ haloSettings={...DEFAULT_HALO_SETTINGS}; applyHaloSettings(); }
@@ -2045,9 +2086,9 @@ if ("serviceWorker" in navigator) {
       sgReloadedAfterUpdate = true;
       window.location.reload();
     });
-    navigator.serviceWorker.register('./sw.js?v=25', { updateViaCache: 'none' })
+    navigator.serviceWorker.register('./sw.js?v=29', { updateViaCache: 'none' })
       .then(reg => {
-        console.log('SpeedGuard SW V24 registered', reg);
+        console.log('SpeedGuard SW V28 registered', reg);
         reg.update().catch(() => {});
       })
       .catch(e => console.warn('SW err', e));
