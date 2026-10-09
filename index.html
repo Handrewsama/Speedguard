@@ -921,7 +921,7 @@ let osmQuerying  = false;
 
 // Radar de tram state
 let segmentRadar = { active:false, totalKm:5, limitKmh:120, distanceKm:0, startTime:0, lastLat:null, lastLon:null, completed:false };
-let radarDetection = { fixed:[], average:[], alerted:new Set(), lastQueryLat:null, lastQueryLon:null, lastAlertAt:0, activeAverageId:null };
+let radarDetection = { fixed:[], average:[], alerted:new Set(), lastQueryLat:null, lastQueryLon:null, lastAlertAt:0, lastAlertByKey:{}, activeAverageId:null };
 let roadDetection = {ref:'',name:'',limit:null,highway:'',distanceM:null,bearing:null,headingDiff:null,source:'OSM',updatedAt:0,confidence:'bad'};
 let tripRadarLog=[]; let tripStartedAt=Date.now(); let loggedRadarIds=new Set(); let lastRoadQueryAt=0; let completedAverageRadars=new Map();
 let radarQuerying = false;
@@ -932,6 +932,9 @@ const DEFAULT_ALERT_SETTINGS = { fixed:true, average:true, mobileZones:true, voi
 let currentRoadRef = '';
 let currentRoadName = '';
 let lastMobileAlertAt = 0;
+let activeMobileZoneKey = null;
+let lastMobileZoneKey = null;
+let lastMobileZoneCheckAt = 0;
 
 // Trams oficials de vigilància mòbil publicats per l'SCT (via + PK).
 // No representen la presència d'un radar en temps real.
@@ -963,8 +966,18 @@ function mobileZoneText(){ return alertLang()==='es' ? '⚠ ZONA DE VIGILANCIA M
 function mobileZoneVoice(){ return alertLang()==='es' ? 'Atención. Estás en una carretera con tramos oficiales de vigilancia móvil del Servicio Catalán de Tráfico.' : 'Atenció. Estàs en una carretera amb trams oficials de vigilància mòbil del Servei Català de Trànsit.'; }
 function updateMobileZoneHUD(){
   const zone=getSctMobileZone(), el=document.getElementById('drhMobileZone');
+  const key=zone ? normRef(zone.ref) : null;
+  if(!alertSettings.mobileZones || !zone){
+    activeMobileZoneKey=null;
+    if(el) el.style.display='none';
+    const route=document.getElementById('drhRoute');
+    if(route && !segmentRadar.active) route.classList.remove('visible');
+    const hud=document.getElementById('drivingRadarHUD');
+    if(hud && !segmentRadar.active) hud.classList.remove('danger');
+    return null;
+  }
+  activeMobileZoneKey=key;
   if(!el) return zone;
-  if(!alertSettings.mobileZones || !zone){ el.style.display='none'; return null; }
   el.style.display='block'; el.style.left='8%'; el.style.width='84%';
   const route=document.getElementById('drhRoute'); if(route) route.classList.add('visible');
   const title=document.getElementById('drhRouteTitle'); if(title) title.textContent=alertLang()==='es'?'ZONA VIGILANCIA MÓVIL SCT':'ZONA VIGILÀNCIA MÒBIL SCT';
@@ -1368,11 +1381,14 @@ async function queryOSMLimit() {
     candidates.sort((a,b)=>a.score-b.score); const c=candidates[0];
     if(!c || c.d>0.09){
       roadDetection={...roadDetection,confidence:'bad',updatedAt:Date.now(),distanceM:c?c.d*1000:null};
-      updateRoadDiagnostic(); if(status)status.textContent='– VIA NO SEGURA'; return;
+      currentRoadRef=''; currentRoadName='';
+      updateRoadDiagnostic(); updateMobileZoneHUD(); if(status)status.textContent='– VIA NO SEGURA'; return;
     }
     const t=c.e.tags||{}; const limit=c.speed||null; const ref=t.ref||''; const name=t.name||'';
-    roadDetection={ref,name,limit,highway:t.highway||'',distanceM:c.d*1000,bearing:c.bearing,headingDiff:c.diff,source:'OSM',updatedAt:Date.now(),confidence:(c.d<.025&&Math.min(c.diff,180-c.diff)<45)?'ok':(c.d<.06&&Math.min(c.diff,180-c.diff)<75)?'warn':'bad'};
-    if(ref) currentRoadRef=ref; if(name) currentRoadName=name;
+    const confidence=(c.d<.025&&Math.min(c.diff,180-c.diff)<45)?'ok':(c.d<.06&&Math.min(c.diff,180-c.diff)<75)?'warn':'bad';
+    roadDetection={ref,name,limit,highway:t.highway||'',distanceM:c.d*1000,bearing:c.bearing,headingDiff:c.diff,source:'OSM',updatedAt:Date.now(),confidence};
+    // Només una via probable/confirmada pot activar una zona SCT o canviar el límit.
+    if(confidence!=='bad'){currentRoadRef=ref||'';currentRoadName=name||'';} else {currentRoadRef='';currentRoadName='';}
     updateRoadDiagnostic(); updateMobileZoneHUD();
     if(limit){
       const found=TIPOS_VIA.reduce((best,v)=>Math.abs(v.limite-limit)<Math.abs(best.limite-limit)?v:best);
@@ -1390,8 +1406,17 @@ function updateRoadDiagnostic(){
 }
 
 function speakRadar(text) {
-  if(!alertSettings.voice) return;
-  try { if (!('speechSynthesis' in window)) return; window.speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(text); u.lang=alertLang()==='es'?'es-ES':'ca-ES'; u.rate=1.05; u.volume=.9; window.speechSynthesis.speak(u); } catch {}
+  if(!alertSettings.voice) return false;
+  try {
+    if (!('speechSynthesis' in window) || !('SpeechSynthesisUtterance' in window)) return false;
+    const synth=window.speechSynthesis;
+    // No cancel·lem missatges ja en curs a cada actualització GPS: això podia tallar la veu.
+    if(synth.speaking && synth.pending) synth.cancel();
+    const u=new SpeechSynthesisUtterance(String(text));
+    u.lang=alertLang()==='es'?'es-ES':'ca-ES'; u.rate=1.0; u.volume=1;
+    u.onerror=(e)=>console.warn('SpeedGuard: error de veu',e.error||e);
+    synth.resume(); synth.speak(u); return true;
+  } catch(e) { console.warn('SpeedGuard: veu no disponible',e); return false; }
 }
 function showRadarAlert(text,type='fixed'){
   const el=document.getElementById('autoRadarAlert'),hud=document.getElementById('drivingRadarHUD'),ha=document.getElementById('drhAlert');
@@ -1477,33 +1502,51 @@ function startNewTrip(){tripStartedAt=Date.now();tripRadarLog=[];loggedRadarIds=
 function checkRadarProximity(){
   if(lastLat===null||lastLon===null)return;
   for(const [id,until] of completedAverageRadars) if(until<=Date.now()) completedAverageRadars.delete(id);
-  updateNearestRadarHUD();
   const now=Date.now(), maxD=Math.max(100,Number(alertSettings.distanceM)||1000)/1000;
   const mobileZone=updateMobileZoneHUD();
-  if(mobileZone && alertSettings.mobileZones && alertSettings.visual){
-    const route=document.getElementById('drhRoute'); if(route) route.classList.add('visible');
-    const hud=document.getElementById('drivingRadarHUD'); if(hud) hud.classList.add('danger');
-    const ha=document.getElementById('drhAlert'); if(ha) ha.textContent=T().mobile();
-    if(alertSettings.voice && now-lastMobileAlertAt>45000){ lastMobileAlertAt=now; speakRadar(T().mobileVoice()); }
+  const zoneKey=mobileZone ? normRef(mobileZone.ref) : null;
+  if(zoneKey && zoneKey!==lastMobileZoneKey){
+    lastMobileZoneKey=zoneKey;
+    if(alertSettings.mobileZones && alertSettings.visual) showRadarAlert(T().mobile(),'danger');
+    if(alertSettings.mobileZones && alertSettings.voice && now-lastMobileAlertAt>8000){lastMobileAlertAt=now;speakRadar(mobileZoneVoice());}
+  } else if(!zoneKey){
+    lastMobileZoneKey=null;
+    const hud=document.getElementById('drivingRadarHUD');
+    if(hud && !segmentRadar.active) hud.classList.remove('danger');
   }
   const av=alertSettings.average ? radarDetection.average.map(r=>({...r,d:distanceToRadar(r)})).filter(r=>r.d<Math.max(1.5,maxD/1000)&&radarDirectionOK(r)).sort((a,b)=>a.d-b.d)[0] : null;
+  radarDetection.activeAverageId=av?av.id:null;
   if(av){
-    radarDetection.activeAverageId=av.id;
-    if(!segmentRadar.active&&av.d<.35&&!completedAverageRadars.has(av.id)){autoStartAverageRadar(av);}
-    if(!segmentRadar.active&&av.d<maxD/1000&&now-radarDetection.lastAlertAt>20000){
-      radarDetection.lastAlertAt=now;
+    if(!segmentRadar.active&&av.d<.35&&!completedAverageRadars.has(av.id)) autoStartAverageRadar(av);
+    const key='average:'+av.id;
+    if(!segmentRadar.active&&av.d<maxD/1000&&now-(radarDetection.lastAlertByKey[key]||0)>25000){
+      radarDetection.lastAlertByKey[key]=now;
       showRadarAlert(T().avg(Math.round(av.d*1000),av.limit),'average');
       speakRadar(T().avgVoice(Math.round(av.d*1000),av.limit)); updateRouteHUD(av);
     }
   }
-  const fx=alertSettings.fixed ? radarDetection.fixed.map(r=>({...r,d:distanceToRadar(r)})).filter(r=>r.d<maxD/1000).filter(r=>{if(!Number.isFinite(currentHeading)||currentSpeed<15)return true;const b=bearingDeg(lastLat,lastLon,r.lat,r.lon);return angleDiff(currentHeading,b)<=75}).sort((a,b)=>a.d-b.d)[0] : null;
+  const fx=alertSettings.fixed ? radarDetection.fixed.map(r=>({...r,d:distanceToRadar(r)})).filter(r=>r.d<maxD/1000).filter(r=>{if(!Number.isFinite(getUsableHeading())||currentSpeed<15)return true;const b=bearingDeg(lastLat,lastLon,r.lat,r.lon);return angleDiff(getUsableHeading(),b)<=75}).sort((a,b)=>a.d-b.d)[0] : null;
   if(fx){
     if(fx.d<=0.08) logRadarPass(fx,'fixed',currentSpeed);
-    if(now-radarDetection.lastAlertAt>20000){
-      radarDetection.lastAlertAt=now;
+    const key='fixed:'+fx.id;
+    if(now-(radarDetection.lastAlertByKey[key]||0)>25000){
+      radarDetection.lastAlertByKey[key]=now;
       showRadarAlert(T().fixed(Math.round(fx.d*1000),fx.limit),'fixed');
       speakRadar(T().fixedVoice(Math.round(fx.d*1000),fx.limit)); updateRouteHUD(fx);
     }
+  }
+  // Si no hi ha radar a l'abast i no hi ha tram actiu, amaga els avisos antics.
+  if(!av&&!fx&&!mobileZone&&!segmentRadar.active){
+    const hud=document.getElementById('drivingRadarHUD');
+    const live=document.getElementById('drhLive');
+    const alert=document.getElementById('drhAlert');
+    const route=document.getElementById('drhRoute');
+    const banner=document.getElementById('autoRadarAlert');
+    if(live)live.style.display='none';
+    if(route)route.classList.remove('visible');
+    if(hud){hud.classList.remove('visible','fixed','danger');}
+    if(banner)banner.style.display='none';
+    if(alert)alert.textContent=T().scanning(radarDetection.fixed.length+radarDetection.average.length);
   }
 }
 
@@ -1914,7 +1957,7 @@ setInterval(() => {
 </script>
 <script>
 if ("serviceWorker" in navigator) {
-  // SpeedGuard V24 — force Service Worker refresh and recover from stale caches
+  // SpeedGuard V25 — force Service Worker refresh and recover from stale caches
   if ('serviceWorker' in navigator) {
     let sgReloadedAfterUpdate = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
@@ -1922,7 +1965,7 @@ if ("serviceWorker" in navigator) {
       sgReloadedAfterUpdate = true;
       window.location.reload();
     });
-    navigator.serviceWorker.register('./sw.js?v=24', { updateViaCache: 'none' })
+    navigator.serviceWorker.register('./sw.js?v=25', { updateViaCache: 'none' })
       .then(reg => {
         console.log('SpeedGuard SW V24 registered', reg);
         reg.update().catch(() => {});
