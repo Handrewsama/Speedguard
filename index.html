@@ -175,6 +175,8 @@
     .tb-left { display: flex; align-items: center; gap: 8px; }
     .tb-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 6px var(--ok); }
     .app-version { font-size: 9px; letter-spacing: 1px; padding: 2px 5px; margin-left: 4px; border: 1px solid currentColor; border-radius: 5px; opacity: .9; vertical-align: 1px; }
+    .tb-logo { width:28px;height:28px;object-fit:cover;border-radius:7px;flex:0 0 auto;box-shadow:0 0 8px rgba(0,180,255,.28); }
+    .tb-left { display:flex;align-items:center;gap:7px;min-width:0; }
     .tb-title { font-family: 'Share Tech Mono', monospace; font-size: 12px; letter-spacing: 2px; color: var(--ok); }
     .tb-actions { display: flex; gap: 6px; }
     .tb-btn {
@@ -632,7 +634,7 @@ body.driving-mode #drivingRadarHUD{display:block}
   <div id="titleBar">
     <div class="tb-left">
       <div class="tb-dot" id="statusDot"></div>
-      <span class="tb-title">SPEEDGUARD <span class="app-version">V28 · AUTO</span></span>
+      <img class="tb-logo" src="logo-mark.png" alt="" aria-hidden="true"><span class="tb-title">SPEEDGUARD <span class="app-version">AUTO</span></span>
     </div>
     <div class="tb-actions">
       <button class="tb-btn" id="minimizeBtn" title="Minimizar">_</button>
