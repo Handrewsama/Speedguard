@@ -286,6 +286,14 @@
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
 
     /* ── NAV TABS ────────────────────────────── */
+
+    .analysis-map{width:100%;height:auto;display:block;background:#10191d;border-radius:12px;border:1px solid #294047;touch-action:pan-x pan-y}
+    .analysis-stat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0}
+    .analysis-stat{background:rgba(255,255,255,.045);border:1px solid var(--border);border-radius:10px;padding:10px}
+    .analysis-stat small{display:block;color:var(--muted);font-size:10px}.analysis-stat strong{font-size:20px;color:var(--ok)}
+    .analysis-graph{width:100%;height:auto;background:#10191d;border-radius:12px;display:block}
+    .analysis-event{padding:9px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:center;justify-content:space-between}
+
     .nav-tabs {
       display: flex; border-top: 1px solid var(--border); flex-shrink: 0;
     }
@@ -642,7 +650,7 @@ body.driving-mode #drivingRadarHUD{display:block}
   <div id="titleBar">
     <div class="tb-left">
       <div class="tb-dot" id="statusDot"></div>
-      <img class="tb-logo" src="logo-mark.png" alt="" aria-hidden="true"><span class="tb-title">SPEEDGUARD <span class="app-version">V40</span></span>
+      <img class="tb-logo" src="logo-mark.png" alt="" aria-hidden="true"><span class="tb-title">SPEEDGUARD <span class="app-version">V41</span></span>
     </div>
     <div class="tb-actions">
       <button class="tb-btn" id="minimizeBtn" title="Minimizar">_</button>
@@ -898,6 +906,15 @@ body.driving-mode #drivingRadarHUD{display:block}
       <div class="info-block"><h3>ℹ️ SOBRE LES DADES</h3><p>Els trajectes es desen localment en aquest navegador. Si esborres les dades del lloc web, es poden perdre. Les dades de radars i GPS són orientatives i poden ser incompletes.</p></div>
     </div><!-- /infoScreen -->
 
+    <!-- ── TRIP ANALYSIS ── -->
+    <div id="analysisScreen" class="screen">
+      <div class="info-block"><h3>📊 ANÀLISI DEL TRAJECTE</h3><p>Els trajectes es registren automàticament mentre el mode de conducció està actiu. Selecciona un viatge per veure el recorregut, la velocitat i les deteccions guardades.</p>
+      <label style="display:block;margin:8px 0">Enregistrament automàtic <input id="autoRecordToggle" type="checkbox" checked onchange="setAutoRecord(this.checked)" style="transform:scale(1.2);margin-left:8px"></label>
+      <div id="analysisTripPicker"></div></div>
+      <div id="tripAnalysisContent" class="info-block"><p>Selecciona un trajecte de l'historial.</p></div>
+      <div class="info-block"><p><strong>Nota:</strong> el recorregut només inclou les mostres GPS enregistrades. Els límits de velocitat es mostren només quan hi ha una dada disponible; la velocitat GPS és orientativa i no és una mesura oficial de radar.</p></div>
+    </div><!-- /analysisScreen -->
+
   </div><!-- /mainContent -->
 
   <!-- GPS Status bar -->
@@ -916,7 +933,8 @@ body.driving-mode #drivingRadarHUD{display:block}
   <div class="nav-tabs">
     <button class="nav-tab active" id="tab-speed"  onclick="showScreen('speed')">🚗 RADAR</button>
     <button class="nav-tab"        id="tab-editor" onclick="showScreen('editor')">⚙ EDITAR</button>
-    <button class="nav-tab" id="tab-info" onclick="handleTripTab()">🧾 VIATGE</button>
+    <button class="nav-tab" id="tab-info" onclick="handleTripTab()">🧾 VIATGES</button>
+    <button class="nav-tab" id="tab-analysis" onclick="showTripAnalysis()">📊 ANÀLISI</button>
   </div>
 
   <div class="resize-hint"></div>
@@ -1099,6 +1117,10 @@ let radarDetection = { fixed:[], average:[], alerted:new Set(), lastQueryLat:nul
 let roadDetection = {ref:'',name:'',limit:null,highway:'',distanceM:null,bearing:null,headingDiff:null,source:'OSM',updatedAt:0,confidence:'bad'};
 let tripRadarLog=[]; let tripStartedAt=Date.now(); let loggedRadarIds=new Set(); let tripDistanceKm=0; let lastTripLat=null; let lastTripLon=null; let lastRoadQueryAt=0; let completedAverageRadars=new Map();
 let tripDiagnosticLog=[]; const TRIP_DIAGNOSTICS_KEY='sg_trip_diagnostics_v1';
+let tripTrackSamples=[]; const TRIP_TRACK_KEY='sg_trip_track_v1'; const AUTO_RECORD_KEY='sg_auto_record_enabled'; let selectedAnalysisTripId=null;
+function autoRecordEnabled(){return localStorage.getItem(AUTO_RECORD_KEY)!=='0'}
+function setAutoRecord(v){localStorage.setItem(AUTO_RECORD_KEY,v?'1':'0');const e=document.getElementById('autoRecordToggle');if(e)e.checked=!!v;const m=document.getElementById('analysisTripPicker');if(m)m.dataset.recording=v?'on':'off';}
+function recordTrackSample(){if(!drivingMode||!autoRecordEnabled()||lastLat===null||lastLon===null)return;const now=Date.now();const prev=tripTrackSamples[tripTrackSamples.length-1];if(prev&&now-prev.t<1500)return;const sample={t:now,lat:lastLat,lon:lastLon,speed:Math.max(0,Number(currentSpeed)||0),accuracy:Number.isFinite(lastGpsAccuracy)?lastGpsAccuracy:null,limit:(typeof currentSpeedLimit!=='undefined'&&Number.isFinite(Number(currentSpeedLimit)))?Number(currentSpeedLimit):((typeof currentLimit!=='undefined'&&Number.isFinite(Number(currentLimit)))?Number(currentLimit):null),road:(document.getElementById('roadDiagnosticName')?.textContent||'').trim()};if(prev){const d=haversineKm(prev.lat,prev.lon,sample.lat,sample.lon);if(d<0.003&&now-prev.t<5000)return;}tripTrackSamples.push(sample);if(tripTrackSamples.length>6000)tripTrackSamples=tripTrackSamples.filter((_,i)=>i%2===0);try{localStorage.setItem(TRIP_TRACK_KEY,JSON.stringify(tripTrackSamples));}catch(e){if(tripTrackSamples.length>1000){tripTrackSamples=tripTrackSamples.filter((_,i)=>i%2===0);try{localStorage.setItem(TRIP_TRACK_KEY,JSON.stringify(tripTrackSamples));}catch{}}}}
 function logTripDiagnostic(type,message,extra={}){const item={time:Date.now(),type:String(type),message:String(message),...extra};tripDiagnosticLog.push(item);if(tripDiagnosticLog.length>300)tripDiagnosticLog=tripDiagnosticLog.slice(-300);try{localStorage.setItem(TRIP_DIAGNOSTICS_KEY,JSON.stringify(tripDiagnosticLog));}catch(e){console.warn('No s’ha pogut desar el diagnòstic',e);}}
 let radarQuerying = false;
 let lastRadarQueryAt = 0;
@@ -1376,12 +1398,25 @@ function renderTripArchive(){
   el.innerHTML='<h3>HISTORIAL DESAT · '+history.length+'</h3>'+history.map((t,i)=>`<button type="button" class="trip-close" style="text-align:left;margin:6px 0" onclick="openSavedTrip(${i})">${new Date(t.start).toLocaleDateString()} · ${new Date(t.start).toLocaleTimeString()} · ${Math.round((t.durationSeconds||0)/60)} min · ${(t.radars||[]).length} alertes${t.distanceKm!=null?' · '+t.distanceKm+' km':''}</button>`).join('');
 }
 function openLatestTrip(){const history=loadTripHistory();if(history.length)openSavedTrip(0);else{renderTripArchive();}}
+function showTripAnalysis(){showScreen('analysis');}
+function renderTripAnalysis(tripId=null){
+  const picker=document.getElementById('analysisTripPicker'), content=document.getElementById('tripAnalysisContent');if(!picker||!content)return;
+  const history=loadTripHistory();if(!history.length){picker.innerHTML='<p>Encara no hi ha trajectes desats. Activa el mode de conducció per començar a enregistrar automàticament.</p>';content.innerHTML='';return;}
+  const chosen=history.find(t=>t.id===(tripId||selectedAnalysisTripId))||history[0];selectedAnalysisTripId=chosen.id;
+  picker.innerHTML='<label style="display:block;font-weight:800;margin:8px 0">Trajecte <select id="analysisTripSelect" onchange="renderTripAnalysis(this.value)" style="width:100%;padding:10px;border-radius:8px;background:#10191d;color:inherit;border:1px solid #355057">'+history.map(t=>`<option value="${t.id}" ${t.id===chosen.id?'selected':''}>${new Date(t.start).toLocaleDateString()} ${new Date(t.start).toLocaleTimeString()} · ${t.distanceKm??'—'} km</option>`).join('')+'</select></label>';
+  const pts=Array.isArray(chosen.track)?chosen.track:[];const speeds=pts.map(p=>Number(p.speed)||0);const maxSpeed=speeds.length?Math.round(Math.max(...speeds)):0;const avgSpeed=speeds.length?Math.round(speeds.reduce((a,b)=>a+b,0)/speeds.length):0;const overs=pts.filter(p=>p.limit!=null&&Number(p.speed)>Number(p.limit)).length;
+  let map='';if(pts.length>=2){const lats=pts.map(p=>p.lat),lons=pts.map(p=>p.lon),minLat=Math.min(...lats),maxLat=Math.max(...lats),minLon=Math.min(...lons),maxLon=Math.max(...lons),dx=Math.max(0.00001,maxLon-minLon),dy=Math.max(0.00001,maxLat-minLat);const xy=pts.map(p=>`${(14+(p.lon-minLon)/dx*272).toFixed(1)},${(166-(p.lat-minLat)/dy*146).toFixed(1)}`).join(' ');const marks=(chosen.radars||[]).map(r=>{const p=pts.reduce((best,q)=>{const d=Math.hypot((q.lat-(r.lat||q.lat))*111,(q.lon-(r.lon||q.lon))*70);return d<best.d?{p:q,d}:best},{p:pts[0],d:Infinity}).p;const x=14+(p.lon-minLon)/dx*272,y=166-(p.lat-minLat)/dy*146;return `<circle cx="${x}" cy="${y}" r="5" fill="#ffbd70" stroke="#fff" stroke-width="1"><title>${r.type} · ${r.speed||0} km/h</title></circle>`}).join('');map=`<svg class="analysis-map" viewBox="0 0 300 180" role="img" aria-label="Mapa esquemàtic del recorregut"><g stroke="#263a40" stroke-width="1"><path d="M0 30H300M0 60H300M0 90H300M0 120H300M0 150H300M50 0V180M100 0V180M150 0V180M200 0V180M250 0V180"/></g><polyline points="${xy}" fill="none" stroke="#4fe0a3" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>${marks}<text x="10" y="14" fill="#a9c4cc" font-size="8">Trajecte enregistrat · punts taronja: radars registrats</text></svg>`;}else{map='<p>No hi ha prou mostres GPS desades per dibuixar el recorregut d’aquest viatge. Els trajectes nous es gravaran automàticament mentre el mode de conducció estigui actiu.</p>';}
+  let graph='';if(pts.length>=2){const n=Math.min(pts.length,220),sampled=pts.filter((_,i)=>i%Math.max(1,Math.ceil(pts.length/n))===0),max=Math.max(30,...sampled.map(p=>Number(p.speed)||0),...sampled.map(p=>Number(p.limit)||0));const line=sampled.map((p,i)=>`${(8+i/(Math.max(1,sampled.length-1))*284).toFixed(1)},${(105-(Number(p.speed)||0)/max*86).toFixed(1)}`).join(' ');const lim=sampled.map((p,i)=>p.limit!=null?`${(8+i/(Math.max(1,sampled.length-1))*284).toFixed(1)},${(105-Number(p.limit)/max*86).toFixed(1)}`:null).filter(Boolean).join(' ');graph=`<h3>Velocitat durant el trajecte</h3><svg class="analysis-graph" viewBox="0 0 300 120" role="img" aria-label="Gràfic de velocitat"><g stroke="#294047"><path d="M8 20H292M8 48H292M8 76H292M8 105H292"/></g>${lim?`<polyline points="${lim}" fill="none" stroke="#ffbd70" stroke-width="1.5" stroke-dasharray="4 3"/>`:''}<polyline points="${line}" fill="none" stroke="#4fe0a3" stroke-width="2"/><text x="8" y="116" fill="#a9c4cc" font-size="8">Inici</text><text x="270" y="116" fill="#a9c4cc" font-size="8">Final</text></svg><p style="font-size:11px;color:var(--muted)">Línia verda: velocitat GPS. Línia discontínua taronja: límit disponible.</p>`;}
+  const events=(chosen.radars||[]).map(r=>`<div class="analysis-event"><div><strong>${r.type==='fixed'?'📷 Radar fix':r.type==='average'?'🚦 Radar de tram':'📍 Possible control mòbil'}</strong><div style="font-size:11px;color:var(--muted)">${new Date(r.time).toLocaleTimeString()} · ${r.ref||r.name||'Ubicació de radar no registrada'}</div></div><div style="text-align:right"><strong>${r.speed||0} km/h</strong><div style="font-size:10px;color:var(--muted)">límit ${r.limit||'—'}</div></div></div>`).join('');
+  content.innerHTML=`<div class="analysis-stat-grid"><div class="analysis-stat"><small>Distància</small><strong>${chosen.distanceKm??'—'} km</strong></div><div class="analysis-stat"><small>Velocitat màxima registrada</small><strong>${maxSpeed} km/h</strong></div><div class="analysis-stat"><small>Velocitat mitjana de les mostres</small><strong>${avgSpeed} km/h</strong></div><div class="analysis-stat"><small>Mostres per sobre del límit conegut</small><strong>${overs}</strong></div></div><h3>Mapa del recorregut</h3>${map}${graph}<h3>Radars i zones registrades</h3>${events||'<p>No hi ha radars registrats en aquest trajecte.</p>'}<p style="font-size:11px;color:var(--muted)">${pts.length} mostres GPS · les posicions dels radars només s’hi poden situar si la base de dades en proporciona coordenades.</p>`;
+}
 function showScreen(name) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById(name + 'Screen').classList.add('active');
   document.getElementById('tab-' + name).classList.add('active');
   if (name === 'editor') renderEditor();
+  if (name === 'analysis') renderTripAnalysis();
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -1495,6 +1530,7 @@ function startGPS() {
           // La posició sempre es mostra; la precisió només condiciona les consultes cartogràfiques.
           lastLat = coords.latitude;
           lastLon = coords.longitude;
+          try { recordTrackSample(); } catch(e) { console.warn("Error enregistrant el recorregut",e); }
           const coordEl = document.getElementById('gpsCoords');
           if (coordEl) coordEl.textContent = `${lastLat.toFixed(5)}, ${lastLon.toFixed(5)} · ±${Math.round(accuracy)} m`;
           setGPSStatus(accuracy <= 50 ? 'ok' : 'waiting', accuracy <= 50 ? `GPS actiu ±${Math.round(accuracy)} m` : `GPS actiu · precisió ±${Math.round(accuracy)} m`);
@@ -1826,13 +1862,13 @@ function loadTripHistory(){try{const a=JSON.parse(localStorage.getItem(TRIP_HIST
 function logRadarPass(r,kind,speed=currentSpeed,extra=''){
   if(!r||loggedRadarIds.has(r.id)) return;
   loggedRadarIds.add(r.id);
-  tripRadarLog.push({time:Date.now(),id:r.id,type:kind,ref:r.ref||'',name:r.name||'',limit:r.limit||null,speed:Math.round(speed||0),average:extra||''});
+  tripRadarLog.push({time:Date.now(),id:r.id,type:kind,ref:r.ref||'',name:r.name||'',lat:Number.isFinite(lastLat)?lastLat:null,lon:Number.isFinite(lastLon)?lastLon:null,limit:r.limit||null,speed:Math.round(speed||0),average:extra||''});
   try{localStorage.setItem('sg_trip_radar_log',JSON.stringify(tripRadarLog));}catch(e){console.warn('No s’ha pogut desar el radar',e)}
 }
 function saveCompletedTrip(){
   if(!tripStartedAt||Date.now()-tripStartedAt<15000)return null;
   const history=loadTripHistory();
-  const trip={id:'trip_'+tripStartedAt,start:tripStartedAt,end:Date.now(),radars:tripRadarLog.slice(),diagnostics:tripDiagnosticLog.slice(),distanceKm:Number.isFinite(tripDistanceKm)?Number(tripDistanceKm.toFixed(2)):null,durationSeconds:Math.max(0,Math.round((Date.now()-tripStartedAt)/1000)),gpsAccuracyM:Number.isFinite(lastGpsAccuracy)?Math.round(lastGpsAccuracy):null};
+  const trip={id:'trip_'+tripStartedAt,start:tripStartedAt,end:Date.now(),radars:tripRadarLog.slice(),diagnostics:tripDiagnosticLog.slice(),track:tripTrackSamples.slice(),distanceKm:Number.isFinite(tripDistanceKm)?Number(tripDistanceKm.toFixed(2)):null,durationSeconds:Math.max(0,Math.round((Date.now()-tripStartedAt)/1000)),gpsAccuracyM:Number.isFinite(lastGpsAccuracy)?Math.round(lastGpsAccuracy):null};
   if(!history.some(x=>x.id===trip.id)){history.unshift(trip);try{localStorage.setItem(TRIP_HISTORY_KEY,JSON.stringify(history.slice(0,100)));}catch(e){console.warn('No s’ha pogut desar l’historial de viatges',e)}}
   return trip;
 }
@@ -1851,7 +1887,7 @@ function showTripHistory(){
 }
 function openSavedTrip(i){const t=loadTripHistory()[i];if(t)renderTripSummary(t)}
 function closeTripSummary(){document.getElementById('tripSummaryModal')?.classList.remove('visible');}
-function startNewTrip(){tripStartedAt=Date.now();tripRadarLog=[];tripDiagnosticLog=[];loggedRadarIds=new Set();tripDistanceKm=0;lastTripLat=null;lastTripLon=null;try{localStorage.removeItem('sg_trip_radar_log');localStorage.removeItem(TRIP_DIAGNOSTICS_KEY)}catch{}logTripDiagnostic('trip','Trajecte iniciat');}
+function startNewTrip(){tripStartedAt=Date.now();tripRadarLog=[];tripDiagnosticLog=[];tripTrackSamples=[];try{localStorage.setItem(TRIP_TRACK_KEY,'[]')}catch{};loggedRadarIds=new Set();tripDistanceKm=0;lastTripLat=null;lastTripLon=null;try{localStorage.removeItem('sg_trip_radar_log');localStorage.removeItem(TRIP_DIAGNOSTICS_KEY)}catch{}logTripDiagnostic('trip','Trajecte iniciat');}
 
 function checkRadarProximity(){
   lastRadarProximityCheckAt=Date.now();
