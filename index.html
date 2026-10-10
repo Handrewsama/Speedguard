@@ -641,7 +641,7 @@ body.driving-mode #drivingRadarHUD{display:block}
   <div id="titleBar">
     <div class="tb-left">
       <div class="tb-dot" id="statusDot"></div>
-      <img class="tb-logo" src="logo-mark.png" alt="" aria-hidden="true"><span class="tb-title">SPEEDGUARD <span class="app-version">V37</span></span>
+      <img class="tb-logo" src="logo-mark.png" alt="" aria-hidden="true"><span class="tb-title">SPEEDGUARD <span class="app-version">V38</span></span>
     </div>
     <div class="tb-actions">
       <button class="tb-btn" id="minimizeBtn" title="Minimizar">_</button>
@@ -1141,7 +1141,7 @@ function getSctMobileZone(){
   return candidates.length ? {ref:currentRoadRef,segments:candidates} : null;
 }
 function mobileZoneText(){ return alertLang()==='es' ? '⚠ ZONA DE VIGILANCIA MÓVIL SCT' : '⚠ ZONA DE VIGILÀNCIA MÒBIL SCT'; }
-function mobileZoneVoice(){ return alertLang()==='es' ? 'Atención. Estás en una carretera con tramos oficiales de vigilancia móvil del Servicio Catalán de Tráfico.' : 'Atenció. Estàs en una carretera amb trams oficials de vigilància mòbil del Servei Català de Trànsit.'; }
+function mobileZoneVoice(){ return T().mobileVoice; }
 function updateMobileZoneHUD(){
   const zone=getSctMobileZone(), el=document.getElementById('drhMobileZone');
   const key=zone ? normRef(zone.ref) : null;
@@ -1158,7 +1158,7 @@ function updateMobileZoneHUD(){
   if(!el) return zone;
   el.style.display='block'; el.style.left='8%'; el.style.width='84%';
   const route=document.getElementById('drhRoute'); if(route) route.classList.add('visible');
-  const title=document.getElementById('drhRouteTitle'); if(title) title.textContent=alertLang()==='es'?'ZONA VIGILANCIA MÓVIL SCT':'ZONA VIGILÀNCIA MÒBIL SCT';
+  const title=document.getElementById('drhRouteTitle'); if(title) title.textContent=alertLang()==='es'?'ZONA DE POSSIBLE RADAR MÓVIL':'ZONA DE POSSIBLE RADAR MÒBIL';
   const start=document.getElementById('drhRouteStart'); if(start) start.textContent='SCT';
   const mid=document.getElementById('drhRouteMiddle'); if(mid) mid.textContent=zone.ref;
   const end=document.getElementById('drhRouteEnd'); if(end) end.textContent='SCT';
@@ -1170,8 +1170,8 @@ let alertSettings = (() => { try { return {...DEFAULT_ALERT_SETTINGS, ...(JSON.p
 function saveAlertSettings(){ localStorage.setItem('sg_alert_settings', JSON.stringify(alertSettings)); }
 function alertLang(){ return alertSettings.language==='es' ? 'es' : 'ca'; }
 const ALERT_TEXT = {
-  ca:{test:'🔔 PROVA D’ALERTA · RADAR A 500 m · LÍMIT 120 km/h',testVoice:'Prova d’alerta. Radar a cinc-cents metres. Límit cent vint quilòmetres per hora.',fixed:(d,l)=>`⚠ RADAR FIX A ${d} m · límit ${l} km/h`,fixedVoice:(d,l)=>`Atenció. Radar fix a ${d} metres. Límit ${l} quilòmetres per hora.`,avg:(d,l)=>`⚠ RADAR DE TRAM A ${d} m · ${l} km/h`,avgVoice:(d,l)=>`Atenció. Radar de tram a ${d} metres. Límit ${l} quilòmetres per hora.`,start:(l,k)=>`📡 RADAR DE TRAM · ${l} km/h · ${k} km`,startVoice:(l)=>`Radar de tram detectat. Límit ${l} quilòmetres per hora. Iniciant control de mitjana.`,complete:'✓ RADAR DE TRAM COMPLETAT · velocitat mitjana calculada',completeVoice:'Radar de tram completat.',scanning:(n)=>`📡 RADARS: ${n} DETECTATS · ESCANEJANT`},
-  es:{test:'🔔 PRUEBA DE ALERTA · RADAR A 500 m · LÍMITE 120 km/h',testVoice:'Prueba de alerta. Radar a quinientos metros. Límite ciento veinte kilómetros por hora.',fixed:(d,l)=>`⚠ RADAR FIJO A ${d} m · límite ${l} km/h`,fixedVoice:(d,l)=>`Atención. Radar fijo a ${d} metros. Límite ${l} kilómetros por hora.`,avg:(d,l)=>`⚠ RADAR DE TRAMO A ${d} m · ${l} km/h`,avgVoice:(d,l)=>`Atención. Radar de tramo a ${d} metros. Límite ${l} kilómetros por hora.`,start:(l,k)=>`📡 RADAR DE TRAMO · ${l} km/h · ${k} km`,startVoice:(l)=>`Radar de tramo detectado. Límite ${l} kilómetros por hora. Iniciando control de velocidad media.`,complete:'✓ RADAR DE TRAMO COMPLETADO · velocidad media calculada',completeVoice:'Radar de tramo completado.',scanning:(n)=>`📡 RADARES: ${n} DETECTADOS · ESCANEANDO`}
+  ca:{mobile:()=> '⚠ ZONA DE POSSIBLE RADAR MÒBIL. Redueix la velocitat i para atenció.',mobileVoice:'Atenció. Estàs entrant en una zona de possible control de velocitat mòbil. Modera la velocitat i para atenció.',test:'🔔 PROVA D’ALERTA · RADAR A 500 m · LÍMIT 120 km/h',testVoice:'Prova d’alerta. Radar a cinc-cents metres. Límit cent vint quilòmetres per hora.',fixed:(d,l)=>`⚠ RADAR FIX A ${d} m · límit ${l} km/h`,fixedVoice:(d,l)=>`Atenció. Radar fix a ${d} metres. Límit ${l} quilòmetres per hora.`,avg:(d,l)=>`⚠ RADAR DE TRAM A ${d} m · ${l} km/h`,avgVoice:(d,l)=>`Atenció. Radar de tram a ${d} metres. Límit ${l} quilòmetres per hora.`,start:(l,k)=>`📡 RADAR DE TRAM · ${l} km/h · ${k} km`,startVoice:(l)=>`Radar de tram detectat. Límit ${l} quilòmetres per hora. Iniciant control de mitjana.`,complete:'✓ RADAR DE TRAM COMPLETAT · velocitat mitjana calculada',completeVoice:'Radar de tram completat.',scanning:(n)=>`📡 RADARS: ${n} DETECTATS · ESCANEJANT`},
+  es:{mobile:()=> '⚠ ZONA DE POSIBLE RADAR MÓVIL. Modera la velocidad y presta atención.',mobileVoice:'Atención. Estás entrando en una zona de posible control de velocidad móvil. Modera la velocidad y presta atención.',test:'🔔 PRUEBA DE ALERTA · RADAR A 500 m · LÍMITE 120 km/h',testVoice:'Prueba de alerta. Radar a quinientos metros. Límite ciento veinte kilómetros por hora.',fixed:(d,l)=>`⚠ RADAR FIJO A ${d} m · límite ${l} km/h`,fixedVoice:(d,l)=>`Atención. Radar fijo a ${d} metros. Límite ${l} kilómetros por hora.`,avg:(d,l)=>`⚠ RADAR DE TRAMO A ${d} m · ${l} km/h`,avgVoice:(d,l)=>`Atención. Radar de tramo a ${d} metros. Límite ${l} kilómetros por hora.`,start:(l,k)=>`📡 RADAR DE TRAMO · ${l} km/h · ${k} km`,startVoice:(l)=>`Radar de tramo detectado. Límite ${l} kilómetros por hora. Iniciando control de velocidad media.`,complete:'✓ RADAR DE TRAMO COMPLETADO · velocidad media calculada',completeVoice:'Radar de tramo completado.',scanning:(n)=>`📡 RADARES: ${n} DETECTADOS · ESCANEANDO`}
 };
 function T(){return ALERT_TEXT[alertLang()]}
 function updateAlertSettingsUI(){
@@ -1697,8 +1697,9 @@ function speakRadar(text) {
     if(!radarSpeechPrimed){synth.resume();}
     const u=new SpeechSynthesisUtterance(message);
     u.lang=alertLang()==='es'?'es-ES':'ca-ES';u.rate=1.0;u.volume=1;
-    u.onerror=(e)=>console.warn('SpeedGuard: error de veu',e.error||e);
+    u.onerror=(e)=>{console.warn('SpeedGuard: error de veu',e.error||e);logTripDiagnostic('speech-error','No s’ha pogut reproduir l’avís de veu',{error:e.error||'unknown'});};
     u.onstart=()=>{radarSpeechPrimed=true;};
+    u.onend=()=>{radarSpeechPrimed=true;};
     synth.resume();synth.speak(u);
     radarSpeechLastText=message;radarSpeechLastAt=now;return true;
   } catch(e) { console.warn('SpeedGuard: veu no disponible',e); return false; }
@@ -1836,17 +1837,29 @@ function checkRadarProximity(){
   if(lastLat===null||lastLon===null)return;
   for(const [id,until] of completedAverageRadars) if(until<=Date.now()) completedAverageRadars.delete(id);
   const now=Date.now(), maxD=Math.max(100,Number(alertSettings.distanceM)||1000)/1000;
-  const mobileZone=updateMobileZoneHUD();
-  const zoneKey=mobileZone ? normRef(mobileZone.ref) : null;
-  if(zoneKey && zoneKey!==lastMobileZoneKey){
-    lastMobileZoneKey=zoneKey;logTripDiagnostic('mobile-zone','Entrada a zona de vigilància mòbil',{road:zoneKey});
-    if(alertSettings.mobileZones && alertSettings.visual) showRadarAlert(T().mobile(),'danger');
-    if(alertSettings.mobileZones && alertSettings.voice && now-lastMobileAlertAt>8000){lastMobileAlertAt=now;speakRadar(mobileZoneVoice());}
-  } else if(!zoneKey){
-    if(lastMobileZoneKey) logTripDiagnostic('mobile-zone','Sortida de zona de vigilància mòbil',{road:lastMobileZoneKey});
-    lastMobileZoneKey=null;
-    const hud=document.getElementById('drivingRadarHUD');
-    if(hud && !segmentRadar.active) hud.classList.remove('danger');
+  let mobileZone=null, zoneKey=null;
+  // A mobile-zone UI/translation failure must never stop fixed/average radar alerts.
+  try {
+    mobileZone=updateMobileZoneHUD();
+    zoneKey=mobileZone ? normRef(mobileZone.ref) : null;
+    if(zoneKey && zoneKey!==lastMobileZoneKey){
+      lastMobileZoneKey=zoneKey;
+      logTripDiagnostic('mobile-zone','Entrada a zona de possible vigilància mòbil',{road:zoneKey});
+      if(alertSettings.mobileZones && alertSettings.visual) showRadarAlert(T().mobile(),'danger');
+      if(alertSettings.mobileZones && alertSettings.voice && now-lastMobileAlertAt>8000){
+        lastMobileAlertAt=now;
+        speakRadar(mobileZoneVoice());
+      }
+    } else if(!zoneKey){
+      if(lastMobileZoneKey) logTripDiagnostic('mobile-zone','Sortida de zona de vigilància mòbil',{road:lastMobileZoneKey});
+      lastMobileZoneKey=null;
+      const hud=document.getElementById('drivingRadarHUD');
+      if(hud && !segmentRadar.active) hud.classList.remove('danger');
+    }
+  } catch(e) {
+    console.warn('SpeedGuard: error processant zona mòbil',e);
+    logTripDiagnostic('mobile-zone-error','Error processant zona de vigilància mòbil');
+    mobileZone=null; zoneKey=null;
   }
   const av=alertSettings.average ? radarDetection.average.map(r=>({...r,d:distanceToRadar(r)})).filter(r=>r.d<Math.max(1.5,maxD/1000)&&radarDirectionOK(r)).sort((a,b)=>a.d-b.d)[0] : null;
   radarDetection.activeAverageId=av?av.id:null;
