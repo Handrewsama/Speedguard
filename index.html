@@ -453,6 +453,10 @@
     #drivingRadarHUD{display:none;position:relative;z-index:1200;margin:0 0 6px;border:0;border-bottom:1px solid rgba(0,255,136,.28);border-radius:0;background:rgba(5,12,12,.94);box-shadow:0 0 22px rgba(0,255,136,.08);overflow:hidden;pointer-events:none}
     #drivingRadarHUD.visible{display:block}
     #drivingRadarHUD .drh-alert{padding:10px 12px;font:900 17px/1.25 'Rajdhani',sans-serif;letter-spacing:1px;color:#9ed5ff;border-bottom:1px solid rgba(255,255,255,.06)}
+    #drivingRadarHUD .drh-recovery-row{display:flex;align-items:center;gap:8px;padding:7px 9px;pointer-events:auto;border-bottom:1px solid rgba(255,255,255,.06)}
+    #navRecoverBtn{flex:0 0 auto;min-height:36px;padding:7px 10px;border:1px solid #35b9d9;border-radius:9px;background:#102b34;color:#baf4ff;font:800 11px 'Rajdhani',sans-serif;letter-spacing:.4px;cursor:pointer;touch-action:manipulation}
+    #navRecoverBtn:disabled{opacity:.6}
+    #navRecoverStatus{min-width:0;font:10px/1.25 'Share Tech Mono',monospace;color:#9fb0b2}
     #drivingRadarHUD.fixed .drh-alert{color:#dfff9b}
     #drivingRadarHUD.danger .drh-alert{color:#ff8f8f}
     #drivingRadarHUD .drh-live{padding:8px 10px 9px}
@@ -637,7 +641,7 @@ body.driving-mode #drivingRadarHUD{display:block}
   <div id="titleBar">
     <div class="tb-left">
       <div class="tb-dot" id="statusDot"></div>
-      <img class="tb-logo" src="logo-mark.png" alt="" aria-hidden="true"><span class="tb-title">SPEEDGUARD <span class="app-version">V34</span></span>
+      <img class="tb-logo" src="logo-mark.png" alt="" aria-hidden="true"><span class="tb-title">SPEEDGUARD <span class="app-version">V35</span></span>
     </div>
     <div class="tb-actions">
       <button class="tb-btn" id="minimizeBtn" title="Minimizar">_</button>
@@ -665,6 +669,7 @@ body.driving-mode #drivingRadarHUD{display:block}
     </div>
     <button id="exitDriveBtn" type="button" onclick="exitDrivingMode()" aria-hidden="true" tabindex="-1">⏹ FINALITZAR TRAJECTE</button>
     <div class="drh-alert" id="drhAlert">📡 ESCANEJANT RADARS…</div>
+    <div class="drh-recovery-row"><button id="navRecoverBtn" type="button" onclick="recoverFromNavigation()">↻ RECUPERAR RADARS</button><span id="navRecoverStatus" role="status" aria-live="polite">GPS i radars en seguiment</span></div>
     <div id="drhRoute">
       <div class="route-head"><span id="drhRouteTitle">RECORRIDO DE CONTROL</span><span id="drhRouteStatus">—</span></div>
       <div class="route-line"><div class="route-base"></div><div class="route-progress" id="drhRouteProgress"></div><div class="route-zone mobile" id="drhMobileZone"></div><div class="route-radar" id="drhRouteRadar"></div><div class="route-marker" id="drhRouteMarker"></div></div>
@@ -1831,6 +1836,36 @@ function checkRadarProximity(){
   }
 }
 
+
+// Recuperació des de la pantalla de navegació: neteja estats locals i força una nova consulta de radars.
+async function recoverFromNavigation(){
+  const btn=document.getElementById('navRecoverBtn');
+  const status=document.getElementById('navRecoverStatus');
+  if(btn?.disabled)return;
+  if(btn)btn.disabled=true;
+  if(status)status.textContent='Recalculant estats…';
+  try{
+    const localOk=recoverRadarSystem('manual');
+    if(lastLat===null||lastLon===null){
+      if(status)status.textContent='Cal esperar una posició GPS vàlida';
+      return;
+    }
+    if(radarQuerying){
+      if(status)status.textContent=localOk?'Estats recuperats; consulta de radars ja en curs':'Consulta de radars ja en curs';
+      return;
+    }
+    if(status)status.textContent='Forçant una nova consulta de radars…';
+    localStorage.removeItem('sg_radar_cache_v23');
+    await detectRadars(true);
+    if(lastLat!==null&&lastLon!==null){updateMobileZoneHUD();checkRadarProximity();updateNearestRadarHUD();}
+    if(status)status.textContent='✓ Recuperació acabada · '+new Date().toLocaleTimeString();
+  }catch(e){
+    console.warn('Recuperació des de navegació',e);
+    if(status)status.textContent='No s’ha pogut actualitzar; comprova la connexió';
+  }finally{
+    if(btn)btn.disabled=false;
+  }
+}
 
 // Recuperació local: neteja només els estats visuals/càlculs que poden quedar enganxats.
 // No esborra la base de radars, el trajecte ni els radars de tram completats.
