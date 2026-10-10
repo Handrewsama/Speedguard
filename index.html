@@ -10,6 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="SpeedGuard">
   <title>SpeedGuard DGT</title>
   <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
@@ -287,7 +288,16 @@
 
     /* ── NAV TABS ────────────────────────────── */
 
-    .analysis-map{width:100%;height:auto;display:block;background:#10191d;border-radius:12px;border:1px solid #294047;touch-action:pan-x pan-y}
+    .analysis-map{width:100%;height:390px;display:block;background:#10191d;border-radius:12px;border:1px solid #294047;touch-action:pan-x pan-y;overflow:hidden}
+    .analysis-map-help{font-size:11px;color:var(--muted);margin:6px 0 10px}
+    .analysis-map-point{font:700 12px Rajdhani,sans-serif}
+    .analysis-point-detail{background:#10191d;color:#f2f5f5;border:1px solid #4fe0a3;border-radius:10px;padding:9px;min-width:155px;font-family:Rajdhani,sans-serif}
+    .leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#10191d;color:#f2f5f5}
+    .leaflet-control-attribution{font-size:9px!important}
+    .ribbon-legend{gap:7px!important}
+    .ribbon-legend span{font-size:clamp(12px,3.2vw,15px)!important;font-weight:800!important;letter-spacing:.15px!important;padding:6px 8px!important;min-height:32px;display:inline-flex;align-items:center;gap:5px;border-radius:8px}
+    .ribbon-legend .legend-icon{font-size:16px!important}
+    @media(max-width:380px){.ribbon-legend span{font-size:11px!important;padding:5px 6px!important;gap:3px}}
     .analysis-stat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0}
     .analysis-stat{background:rgba(255,255,255,.045);border:1px solid var(--border);border-radius:10px;padding:10px}
     .analysis-stat small{display:block;color:var(--muted);font-size:10px}.analysis-stat strong{font-size:20px;color:var(--ok)}
@@ -401,10 +411,10 @@
     body.driving-mode #floatWindow { border-color:rgba(0,255,136,.16); }
     body.driving-mode #titleBar { min-height:40px; }
     body.driving-mode #speedScreen { padding-top:6px; }
-    body.driving-mode .speed-hero { padding:clamp(10px,3vh,24px) 0 8px; }
-    body.driving-mode .speed-value { font-size:clamp(88px,29vw,148px); line-height:.88; }
+    body.driving-mode .speed-hero { padding:clamp(3px,1vh,8px) 0 2px; }
+    body.driving-mode .speed-value { font-size:clamp(82px,25vw,132px); line-height:.82; }
     body.driving-mode .speed-unit { font-size:12px; letter-spacing:5px; margin-top:7px; }
-    body.driving-mode .limit-bar { margin:14px 0 12px; }
+    body.driving-mode .limit-bar { margin:8px 0 7px; }
     body.driving-mode .limit-badge { width:58px; height:58px; font-size:18px; border-width:4px; }
     body.driving-mode .limit-bar-track { height:8px; }
     body.driving-mode .excess-badge { font-size:16px; min-width:60px; }
@@ -422,8 +432,8 @@
     body.driving-mode .sancion-pill { font-size:13px; padding:5px 11px; }
     body.driving-mode .sancion-nota { font-size:10px; }
     @media (max-width:600px), (max-height:700px) {
-      body.driving-mode .speed-hero { padding-top:clamp(12px,4vh,28px); }
-      body.driving-mode .speed-value { font-size:clamp(92px,30vw,150px); }
+      body.driving-mode .speed-hero { padding-top:clamp(4px,1vh,9px); }
+      body.driving-mode .speed-value { font-size:clamp(82px,25vw,132px); }
       body.driving-mode #sancionCard { margin-bottom:10px; }
     }
 
@@ -637,6 +647,7 @@ body.driving-mode #drivingRadarHUD{display:block}
   
     .alert-simple-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}.alert-toggle{display:flex;align-items:center;gap:7px;min-height:42px;padding:7px 8px;border:1px solid #202033;border-radius:9px;background:#0b0b12;color:#eafcff;font-size:10px;font-weight:700}.alert-toggle input{width:18px;height:18px;accent-color:var(--ok)}.alert-toggle.disabled{opacity:.45}.alert-toggle small{font-size:8px;color:var(--muted)}.alert-source-note{margin-top:9px;padding:8px 9px;border-radius:9px;background:#101017;border:1px solid #262638;color:#77778d;font-size:9px;line-height:1.35}
 </style>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 </head>
 <body>
 <div id="edgeHalo" aria-hidden="true"></div>
@@ -650,7 +661,7 @@ body.driving-mode #drivingRadarHUD{display:block}
   <div id="titleBar">
     <div class="tb-left">
       <div class="tb-dot" id="statusDot"></div>
-      <img class="tb-logo" src="logo-mark.png" alt="" aria-hidden="true"><span class="tb-title">SPEEDGUARD <span class="app-version">V41</span></span>
+      <img class="tb-logo" src="logo-mark.png" alt="" aria-hidden="true"><span class="tb-title">SPEEDGUARD <span class="app-version">V42</span></span>
     </div>
     <div class="tb-actions">
       <button class="tb-btn" id="minimizeBtn" title="Minimizar">_</button>
@@ -1405,10 +1416,29 @@ function renderTripAnalysis(tripId=null){
   const chosen=history.find(t=>t.id===(tripId||selectedAnalysisTripId))||history[0];selectedAnalysisTripId=chosen.id;
   picker.innerHTML='<label style="display:block;font-weight:800;margin:8px 0">Trajecte <select id="analysisTripSelect" onchange="renderTripAnalysis(this.value)" style="width:100%;padding:10px;border-radius:8px;background:#10191d;color:inherit;border:1px solid #355057">'+history.map(t=>`<option value="${t.id}" ${t.id===chosen.id?'selected':''}>${new Date(t.start).toLocaleDateString()} ${new Date(t.start).toLocaleTimeString()} · ${t.distanceKm??'—'} km</option>`).join('')+'</select></label>';
   const pts=Array.isArray(chosen.track)?chosen.track:[];const speeds=pts.map(p=>Number(p.speed)||0);const maxSpeed=speeds.length?Math.round(Math.max(...speeds)):0;const avgSpeed=speeds.length?Math.round(speeds.reduce((a,b)=>a+b,0)/speeds.length):0;const overs=pts.filter(p=>p.limit!=null&&Number(p.speed)>Number(p.limit)).length;
-  let map='';if(pts.length>=2){const lats=pts.map(p=>p.lat),lons=pts.map(p=>p.lon),minLat=Math.min(...lats),maxLat=Math.max(...lats),minLon=Math.min(...lons),maxLon=Math.max(...lons),dx=Math.max(0.00001,maxLon-minLon),dy=Math.max(0.00001,maxLat-minLat);const xy=pts.map(p=>`${(14+(p.lon-minLon)/dx*272).toFixed(1)},${(166-(p.lat-minLat)/dy*146).toFixed(1)}`).join(' ');const marks=(chosen.radars||[]).map(r=>{const p=pts.reduce((best,q)=>{const d=Math.hypot((q.lat-(r.lat||q.lat))*111,(q.lon-(r.lon||q.lon))*70);return d<best.d?{p:q,d}:best},{p:pts[0],d:Infinity}).p;const x=14+(p.lon-minLon)/dx*272,y=166-(p.lat-minLat)/dy*146;return `<circle cx="${x}" cy="${y}" r="5" fill="#ffbd70" stroke="#fff" stroke-width="1"><title>${r.type} · ${r.speed||0} km/h</title></circle>`}).join('');map=`<svg class="analysis-map" viewBox="0 0 300 180" role="img" aria-label="Mapa esquemàtic del recorregut"><g stroke="#263a40" stroke-width="1"><path d="M0 30H300M0 60H300M0 90H300M0 120H300M0 150H300M50 0V180M100 0V180M150 0V180M200 0V180M250 0V180"/></g><polyline points="${xy}" fill="none" stroke="#4fe0a3" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>${marks}<text x="10" y="14" fill="#a9c4cc" font-size="8">Trajecte enregistrat · punts taronja: radars registrats</text></svg>`;}else{map='<p>No hi ha prou mostres GPS desades per dibuixar el recorregut d’aquest viatge. Els trajectes nous es gravaran automàticament mentre el mode de conducció estigui actiu.</p>';}
+  let map='';if(pts.length>=2){map='<div id="tripAerialMap" class="analysis-map" role="application" aria-label="Mapa aèria interactiva del recorregut"></div><p class="analysis-map-help">Vista aèria · toca qualsevol punt del recorregut per consultar l’hora, la velocitat i el límit registrat. Els marcadors mostren els radars enregistrats.</p>';}else{map='<p>No hi ha prou mostres GPS desades per dibuixar el recorregut d’aquest viatge. Els trajectes nous es gravaran automàticament mentre el mode de conducció estigui actiu.</p>'; }
   let graph='';if(pts.length>=2){const n=Math.min(pts.length,220),sampled=pts.filter((_,i)=>i%Math.max(1,Math.ceil(pts.length/n))===0),max=Math.max(30,...sampled.map(p=>Number(p.speed)||0),...sampled.map(p=>Number(p.limit)||0));const line=sampled.map((p,i)=>`${(8+i/(Math.max(1,sampled.length-1))*284).toFixed(1)},${(105-(Number(p.speed)||0)/max*86).toFixed(1)}`).join(' ');const lim=sampled.map((p,i)=>p.limit!=null?`${(8+i/(Math.max(1,sampled.length-1))*284).toFixed(1)},${(105-Number(p.limit)/max*86).toFixed(1)}`:null).filter(Boolean).join(' ');graph=`<h3>Velocitat durant el trajecte</h3><svg class="analysis-graph" viewBox="0 0 300 120" role="img" aria-label="Gràfic de velocitat"><g stroke="#294047"><path d="M8 20H292M8 48H292M8 76H292M8 105H292"/></g>${lim?`<polyline points="${lim}" fill="none" stroke="#ffbd70" stroke-width="1.5" stroke-dasharray="4 3"/>`:''}<polyline points="${line}" fill="none" stroke="#4fe0a3" stroke-width="2"/><text x="8" y="116" fill="#a9c4cc" font-size="8">Inici</text><text x="270" y="116" fill="#a9c4cc" font-size="8">Final</text></svg><p style="font-size:11px;color:var(--muted)">Línia verda: velocitat GPS. Línia discontínua taronja: límit disponible.</p>`;}
   const events=(chosen.radars||[]).map(r=>`<div class="analysis-event"><div><strong>${r.type==='fixed'?'📷 Radar fix':r.type==='average'?'🚦 Radar de tram':'📍 Possible control mòbil'}</strong><div style="font-size:11px;color:var(--muted)">${new Date(r.time).toLocaleTimeString()} · ${r.ref||r.name||'Ubicació de radar no registrada'}</div></div><div style="text-align:right"><strong>${r.speed||0} km/h</strong><div style="font-size:10px;color:var(--muted)">límit ${r.limit||'—'}</div></div></div>`).join('');
   content.innerHTML=`<div class="analysis-stat-grid"><div class="analysis-stat"><small>Distància</small><strong>${chosen.distanceKm??'—'} km</strong></div><div class="analysis-stat"><small>Velocitat màxima registrada</small><strong>${maxSpeed} km/h</strong></div><div class="analysis-stat"><small>Velocitat mitjana de les mostres</small><strong>${avgSpeed} km/h</strong></div><div class="analysis-stat"><small>Mostres per sobre del límit conegut</small><strong>${overs}</strong></div></div><h3>Mapa del recorregut</h3>${map}${graph}<h3>Radars i zones registrades</h3>${events||'<p>No hi ha radars registrats en aquest trajecte.</p>'}<p style="font-size:11px;color:var(--muted)">${pts.length} mostres GPS · les posicions dels radars només s’hi poden situar si la base de dades en proporciona coordenades.</p>`;
+  if(pts.length>=2) setTimeout(()=>renderTripAerialMap(chosen,pts),80);
+}
+let tripAerialMapInstance=null;
+function renderTripAerialMap(trip,pts){
+  const el=document.getElementById('tripAerialMap');if(!el)return;
+  if(!window.L){el.innerHTML='<div style="padding:16px;color:#fff">No s’ha pogut carregar el mapa aeri. Comprova la connexió a Internet i torna a obrir aquesta pestanya.</div>';return;}
+  if(tripAerialMapInstance){try{tripAerialMapInstance.remove();}catch{}tripAerialMapInstance=null;}
+  const valid=pts.filter(p=>Number.isFinite(Number(p.lat))&&Number.isFinite(Number(p.lon)));
+  if(valid.length<2){el.textContent='No hi ha prou coordenades vàlides.';return;}
+  const map=L.map(el,{preferCanvas:true,zoomControl:true,scrollWheelZoom:false}).setView([valid[0].lat,valid[0].lon],13);tripAerialMapInstance=map;
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Tiles © Esri'}).addTo(map);
+  L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,opacity:.85,attribution:'Labels © Esri'}).addTo(map);
+  const latlngs=valid.map(p=>[Number(p.lat),Number(p.lon)]);
+  L.polyline(latlngs,{color:'#42efad',weight:4,opacity:.95,lineJoin:'round'}).addTo(map);
+  const stride=Math.max(1,Math.ceil(valid.length/260));
+  valid.forEach((p,i)=>{if(i%stride!==0&&i!==valid.length-1)return;const speed=Math.round(Number(p.speed)||0),limit=p.limit==null?'No disponible':Math.round(Number(p.limit))+' km/h';const marker=L.circleMarker([p.lat,p.lon],{radius:4,weight:1,color:'#f4fff9',fillColor:p.limit!=null&&speed>Number(p.limit)?'#f04444':'#28c98c',fillOpacity:.95}).addTo(map);marker.bindPopup(`<div class="analysis-point-detail"><strong>${new Date(p.t).toLocaleTimeString()}</strong><br>Velocitat: ${speed} km/h<br>Límit registrat: ${limit}<br>${p.road?'Via: '+String(p.road).replace(/[&<>"']/g,''):''}<br><small>Punt ${i+1} de ${valid.length}</small></div>`);});
+  const radarColors={fixed:'#ffb24b',average:'#58c7ff',mobile:'#ff6b6b'};
+  (trip.radars||[]).forEach(r=>{if(!Number.isFinite(Number(r.lat))||!Number.isFinite(Number(r.lon)))return;const label=r.type==='fixed'?'Radar fix':r.type==='average'?'Radar de tram':'Possible radar mòbil';const m=L.circleMarker([Number(r.lat),Number(r.lon)],{radius:8,color:'#fff',weight:2,fillColor:radarColors[r.type]||'#ffb24b',fillOpacity:1}).addTo(map);m.bindPopup(`<div class="analysis-point-detail"><strong>${label}</strong><br>Hora: ${new Date(r.time).toLocaleTimeString()}<br>Velocitat: ${Number(r.speed)||0} km/h<br>Límit registrat: ${r.limit||'No disponible'}${r.average?'<br>'+String(r.average).replace(/[&<>"']/g,''):''}</div>`);});
+  map.fitBounds(L.latLngBounds(latlngs).pad(.12),{maxZoom:16});setTimeout(()=>map.invalidateSize(),100);
 }
 function showScreen(name) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
