@@ -1,5 +1,5 @@
-// SpeedGuard DGT — Service Worker V42
-const CACHE = 'speedguard-sw-v42';
+// SpeedGuard DGT — Service Worker V43
+const CACHE = 'speedguard-sw-v43';
 const OLD_PREFIX = 'speedguard-';
 const ASSETS = ['./', './index.html?v=42', './manifest.json?v=42', './icon-192.png', './icon-512.png', './logo-mark.png'];
 self.addEventListener('install', event => { event.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting())); });
