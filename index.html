@@ -443,10 +443,11 @@
     .compass-radar-marker.fixed .radar-distance{border-color:#ffe56d}.compass-radar-marker.average .radar-distance{border-color:#8adfff}
     .compass-radar-marker.cluster-left .radar-distance{left:0;transform:translateX(-12%)}
     .compass-radar-marker.cluster-right .radar-distance{left:100%;transform:translateX(-88%)}
-    .ribbon-legend{display:flex;justify-content:space-around;align-items:center;gap:4px;padding:6px 4px 0;font:800 10px 'Rajdhani',sans-serif;color:#9fb0b2}
-    .ribbon-legend span{display:flex;align-items:center;justify-content:center;gap:4px;flex:1;min-width:0;text-align:center;white-space:nowrap}
-    .ribbon-legend .legend-icon{font-size:17px;line-height:1}
-    .ribbon-legend .active{color:#00ff88}.ribbon-legend .possible{color:#ffb65c}
+    .ribbon-legend{display:flex;justify-content:space-around;align-items:stretch;gap:6px;padding:8px 5px 2px;font:900 12px 'Rajdhani',sans-serif;color:#718589}
+    .ribbon-legend span{display:flex;align-items:center;justify-content:center;gap:6px;flex:1;min-width:0;text-align:center;white-space:normal;line-height:1.1;padding:8px 5px;border:1px solid #26383b;border-radius:9px;background:rgba(4,12,14,.72);transition:background .15s,border-color .15s,color .15s;min-height:38px;box-sizing:border-box}
+    .ribbon-legend .legend-icon{font-size:22px;line-height:1;flex:0 0 auto}
+    .ribbon-legend .active{color:#00ff88;background:rgba(0,255,136,.12);border-color:#00ff88;box-shadow:0 0 9px rgba(0,255,136,.14)}.ribbon-legend .possible{color:#ffbd70;background:rgba(255,149,0,.13);border-color:#ffad50;box-shadow:0 0 9px rgba(255,149,0,.12)}
+    @media(max-width:390px){.ribbon-legend{gap:3px;padding-left:3px;padding-right:3px}.ribbon-legend span{font-size:11px;gap:3px;padding:7px 2px;min-height:36px}.ribbon-legend .legend-icon{font-size:19px}}
     .drh-compass-dial,.drh-radar-info,.direction-ribbon-foot{display:none!important}
 
     /* ── DRIVING RADAR HUD: zero-touch while driving ─────── */
@@ -641,7 +642,7 @@ body.driving-mode #drivingRadarHUD{display:block}
   <div id="titleBar">
     <div class="tb-left">
       <div class="tb-dot" id="statusDot"></div>
-      <img class="tb-logo" src="logo-mark.png" alt="" aria-hidden="true"><span class="tb-title">SPEEDGUARD <span class="app-version">V38</span></span>
+      <img class="tb-logo" src="logo-mark.png" alt="" aria-hidden="true"><span class="tb-title">SPEEDGUARD <span class="app-version">V39</span></span>
     </div>
     <div class="tb-actions">
       <button class="tb-btn" id="minimizeBtn" title="Minimizar">_</button>
@@ -1108,6 +1109,9 @@ let radarRecoveryBusy = false;
 // Alert configuration — simple, persistent and testable
 const DEFAULT_ALERT_SETTINGS = { fixed:true, average:true, mobileZones:true, voice:true, visual:true, distanceM:1000, language:'ca' };
 let currentRoadRef = '';
+let lastConfirmedRoadAt = 0;
+let lastConfirmedRoadLat = null;
+let lastConfirmedRoadLon = null;
 let currentRoadName = '';
 let lastMobileAlertAt = 0;
 let activeMobileZoneKey = null;
@@ -1646,15 +1650,32 @@ async function queryOSMLimit(forceRefresh = false) {
     }
     candidates.sort((a,b)=>a.score-b.score); const c=candidates[0];
     if(!c || c.d>0.09){
+      // Una lectura puntual deficient no invalida una via ja confirmada: GPS/Overpass poden ballar uns metres.
+      const hasRecentConfirmedRoad=!!currentRoadRef && ['ok','warn'].includes(roadDetection.confidence) &&
+        (Date.now()-lastConfirmedRoadAt)<30*60*1000;
+      if(hasRecentConfirmedRoad){
+        roadDetection={...roadDetection,updatedAt:Date.now()};
+        updateRoadDiagnostic(); updateMobileZoneHUD(); if(status)status.textContent='● VIA CONFIRMADA · mantenint última lectura'; return;
+      }
       roadDetection={...roadDetection,confidence:'bad',updatedAt:Date.now(),distanceM:c?c.d*1000:null};
       currentRoadRef=''; currentRoadName='';
       updateRoadDiagnostic(); updateMobileZoneHUD(); if(status)status.textContent='– VIA NO SEGURA'; return;
     }
     const t=c.e.tags||{}; const limit=c.speed||null; const ref=t.ref||''; const name=t.name||'';
     const confidence=(c.d<.025&&Math.min(c.diff,180-c.diff)<45)?'ok':(c.d<.06&&Math.min(c.diff,180-c.diff)<75)?'warn':'bad';
-    roadDetection={ref,name,limit,highway:t.highway||'',distanceM:c.d*1000,bearing:c.bearing,headingDiff:c.diff,source:'OSM',updatedAt:Date.now(),confidence};
-    // Només una via probable/confirmada pot activar una zona SCT o canviar el límit.
-    if(confidence!=='bad'){currentRoadRef=ref||'';currentRoadName=name||'';} else {currentRoadRef='';currentRoadName='';}
+    const candidateRef=ref||name||'';
+    const existingRef=currentRoadRef||roadDetection.ref||roadDetection.name||'';
+    const sameRoad=!!candidateRef && !!existingRef && candidateRef===existingRef;
+    // Una via ja confirmada es manté si la nova lectura és només probable/ambigua.
+    // Només substituïm la via quan apareix una nova candidata confirmada (o no n'hi havia cap).
+    if(confidence==='ok' || (confidence==='warn' && (!existingRef || sameRoad))){
+      roadDetection={ref,name,limit,highway:t.highway||'',distanceM:c.d*1000,bearing:c.bearing,headingDiff:c.diff,source:'OSM',updatedAt:Date.now(),confidence};
+      currentRoadRef=ref||'';currentRoadName=name||'';lastConfirmedRoadAt=Date.now();lastConfirmedRoadLat=queryLat;lastConfirmedRoadLon=queryLon;
+    } else if(sameRoad){
+      roadDetection={...roadDetection,distanceM:c.d*1000,headingDiff:c.diff,updatedAt:Date.now()};
+    } else if(!existingRef){
+      roadDetection={ref,name,limit,highway:t.highway||'',distanceM:c.d*1000,bearing:c.bearing,headingDiff:c.diff,source:'OSM',updatedAt:Date.now(),confidence};
+    }
     updateRoadDiagnostic(); updateMobileZoneHUD(); markMapDataUpdated();
     if(limit){
       const found=TIPOS_VIA.reduce((best,v)=>Math.abs(v.limite-limit)<Math.abs(best.limite-limit)?v:best);
@@ -1666,7 +1687,7 @@ async function queryOSMLimit(forceRefresh = false) {
 function updateRoadDiagnostic(){
   const box=document.getElementById('roadDiagnostic'); if(!box)return; const n=document.getElementById('roadDiagnosticName'),l=document.getElementById('roadDiagnosticLimit'),m=document.getElementById('roadDiagnosticMeta');
   const label=roadDetection.ref||roadDetection.name||'VIA NO DETECTADA'; n.textContent=label; l.textContent=roadDetection.limit?roadDetection.limit+' km/h':'—';
-  const age=roadDetection.updatedAt?Math.max(0,(Date.now()-roadDetection.updatedAt)/1000):999; if(age>180 && roadDetection.confidence!=='bad'){roadDetection.confidence='bad';roadDetection.limit=null;currentRoadRef='';currentRoadName='';} const d=Number.isFinite(roadDetection.distanceM)?Math.round(roadDetection.distanceM):null; const hd=Number.isFinite(roadDetection.headingDiff)?Math.round(roadDetection.headingDiff):null;
+  const age=roadDetection.updatedAt?Math.max(0,(Date.now()-roadDetection.updatedAt)/1000):999; const d=Number.isFinite(roadDetection.distanceM)?Math.round(roadDetection.distanceM):null; const hd=Number.isFinite(roadDetection.headingDiff)?Math.round(roadDetection.headingDiff):null;
   const state=roadDetection.confidence==='ok'?'VIA ACTUAL CONFIRMADA':roadDetection.confidence==='warn'?'VIA PROBABLE — comprovant direcció':'VIA NO CONFIRMADA';
   box.className='road-diagnostic visible '+roadDetection.confidence; m.textContent=`${state} · ${d!==null?d+' m del tram':''}${hd!==null?' · direcció '+hd+'°':''} · actualitzat fa ${age.toFixed(1)} s`;
   const confidence=document.getElementById('roadConfidence');if(confidence){const c=roadDetection.confidence;confidence.className='road-confidence '+c;confidence.textContent=c==='ok'?'✓ VIA CONFIRMADA':c==='warn'?'! VIA PROBABLE · NO CONFIAR NOMÉS EN AQUEST LÍMIT':'⚠ VIA NO CONFIRMADA · LÍMIT NO VERIFICAT';}
