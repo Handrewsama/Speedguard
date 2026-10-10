@@ -642,7 +642,7 @@ body.driving-mode #drivingRadarHUD{display:block}
   <div id="titleBar">
     <div class="tb-left">
       <div class="tb-dot" id="statusDot"></div>
-      <img class="tb-logo" src="logo-mark.png" alt="" aria-hidden="true"><span class="tb-title">SPEEDGUARD <span class="app-version">V39</span></span>
+      <img class="tb-logo" src="logo-mark.png" alt="" aria-hidden="true"><span class="tb-title">SPEEDGUARD <span class="app-version">V40</span></span>
     </div>
     <div class="tb-actions">
       <button class="tb-btn" id="minimizeBtn" title="Minimizar">_</button>
@@ -2106,7 +2106,7 @@ function updateSegmentRadarUI() {
   else if (margin < 5) warning.textContent = `⚠ NOMÉS ${margin.toFixed(1).replace('.',',')} km/h DE MARGE MITJÀ`;
   else warning.textContent = `✓ MARGE MITJÀ: ${margin.toFixed(1).replace('.',',')} km/h`;
   const hud=document.getElementById('drivingRadarHUD'),liveHud=document.getElementById('drhLive');
-  if(hud&&liveHud&&segmentRadar.active){hud.classList.add('visible');liveHud.style.display='block';document.getElementById('drhAlert').textContent=`📡 RADAR DE TRAM · LÍMIT ${segmentRadar.limitKmh} km/h`;document.getElementById('drhState').textContent=segmentRadar.auto?'AUTO · EN CURS':'EN CURS';document.getElementById('drhFill').style.width=pct.toFixed(1)+'%';document.getElementById('drhFill').style.background=margin<0?'linear-gradient(90deg,#ff9500,#ff3b30)':margin<5?'linear-gradient(90deg,#ffe500,#ff9500)':'linear-gradient(90deg,#00ff88,#00c8ff)';document.getElementById('drhDone').textContent=done.toFixed(2).replace('.',',')+' km';document.getElementById('drhLeft').textContent=left.toFixed(2).replace('.',',')+' km';document.getElementById('drhCurrent').textContent=current;const davg=document.getElementById('drhAverage');davg.textContent=avg.toFixed(1).replace('.',',');davg.style.color=margin<0?'#ff3b30':margin<5?'#ffe500':'#00ff88';document.getElementById('drhWarning').textContent=margin<0?'⚠ MITJANA PER SOBRE DEL LÍMIT':margin<5?`⚠ ${margin.toFixed(1).replace('.',',')} km/h DE MARGE`:`✓ MARGE ${margin.toFixed(1).replace('.',',')} km/h`}
+  if(hud&&liveHud&&segmentRadar.active){hud.classList.add('visible');liveHud.style.display='block';document.getElementById('drhAlert').textContent=`📡 RADAR DE TRAM · LÍMIT ${segmentRadar.limitKmh} km/h`;document.getElementById('drhState').textContent=segmentRadar.auto?'AUTO · EN CURS':'EN CURS';document.getElementById('drhFill').style.width=pct.toFixed(1)+'%';const routeProgress=document.getElementById('drhRouteProgress');if(routeProgress)routeProgress.style.width=pct.toFixed(1)+'%';const routeMarker=document.getElementById('drhRouteMarker');if(routeMarker)routeMarker.style.left=pct.toFixed(1)+'%';document.getElementById('drhFill').style.background=margin<0?'linear-gradient(90deg,#ff9500,#ff3b30)':margin<5?'linear-gradient(90deg,#ffe500,#ff9500)':'linear-gradient(90deg,#00ff88,#00c8ff)';document.getElementById('drhDone').textContent=done.toFixed(2).replace('.',',')+' km';document.getElementById('drhLeft').textContent=left.toFixed(2).replace('.',',')+' km';document.getElementById('drhCurrent').textContent=current;const davg=document.getElementById('drhAverage');davg.textContent=avg.toFixed(1).replace('.',',');davg.style.color=margin<0?'#ff3b30':margin<5?'#ffe500':'#00ff88';document.getElementById('drhWarning').textContent=margin<0?'⚠ MITJANA PER SOBRE DEL LÍMIT':margin<5?`⚠ ${margin.toFixed(1).replace('.',',')} km/h DE MARGE`:`✓ MARGE ${margin.toFixed(1).replace('.',',')} km/h`}
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -2418,7 +2418,7 @@ if ("serviceWorker" in navigator) {
       sgReloadedAfterUpdate = true;
       window.location.reload();
     });
-    navigator.serviceWorker.register('./sw.js?v=30', { updateViaCache: 'none' })
+    navigator.serviceWorker.register('./sw.js?v=40', { updateViaCache: 'none' })
       .then(reg => {
         console.log('SpeedGuard SW V30 registered', reg);
         reg.update().catch(() => {});
