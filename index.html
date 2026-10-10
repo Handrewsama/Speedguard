@@ -641,7 +641,7 @@ body.driving-mode #drivingRadarHUD{display:block}
   <div id="titleBar">
     <div class="tb-left">
       <div class="tb-dot" id="statusDot"></div>
-      <img class="tb-logo" src="logo-mark.png" alt="" aria-hidden="true"><span class="tb-title">SPEEDGUARD <span class="app-version">V35</span></span>
+      <img class="tb-logo" src="logo-mark.png" alt="" aria-hidden="true"><span class="tb-title">SPEEDGUARD <span class="app-version">V37</span></span>
     </div>
     <div class="tb-actions">
       <button class="tb-btn" id="minimizeBtn" title="Minimizar">_</button>
@@ -1249,6 +1249,7 @@ async function toggleDrivingMode() {
   drivingMode = !drivingMode;
   localStorage.setItem('sg_driving_mode', drivingMode ? '1' : '0');
   if (drivingMode) {
+    primeRadarSpeech();
     await enableDeviceCompass();
     await requestScreenWakeLock();
   } else {
@@ -1545,7 +1546,7 @@ async function forceRefreshRadars() {
   if(lastLat===null||lastLon===null){setMaintenanceStatus('Encara no hi ha posició GPS. Connecta el GPS i torna-ho a provar.','error');return;}
   if(radarQuerying){setMaintenanceStatus('La consulta de radars ja està en curs.','info');return;}
   setMaintenanceBusy('forceRadarsBtn',true);setMaintenanceStatus('Consultant radars a Internet; s’ignorarà la memòria cau…');
-  try { localStorage.removeItem('sg_radar_cache_v23'); await detectRadars(true); markRadarDataUpdated();
+  try { localStorage.removeItem('sg_radar_cache_v24'); await detectRadars(true); markRadarDataUpdated();
     const msg=document.getElementById('drhAlert')?.textContent||'';
     const ok=/ACTUALITZATS|LOCAL/i.test(msg);
     setMaintenanceStatus(ok?'Consulta de radars finalitzada. '+msg:'Consulta finalitzada; si no hi ha dades noves, el servei cartogràfic pot no respondre.','ok');
@@ -1672,17 +1673,34 @@ function updateRoadDiagnostic(){
   const prev=window.__sgLastRoadConfidence;if(prev!==roadDetection.confidence){window.__sgLastRoadConfidence=roadDetection.confidence;logTripDiagnostic('road-confidence',state,{confidence:roadDetection.confidence,road:roadDetection.ref||roadDetection.name||'',limit:roadDetection.limit||null});}
 }
 
+let radarSpeechPrimed=false, radarSpeechLastAt=0, radarSpeechLastText='';
+function primeRadarSpeech(){
+  // iOS Safari sovint només permet iniciar SpeechSynthesis després d'una interacció explícita.
+  try{
+    if(!('speechSynthesis' in window)||!('SpeechSynthesisUtterance' in window))return false;
+    const synth=window.speechSynthesis; synth.cancel();
+    const u=new SpeechSynthesisUtterance(' ');
+    u.lang=alertLang()==='es'?'es-ES':'ca-ES';u.volume=0;u.rate=1;
+    u.onend=()=>{radarSpeechPrimed=true;};
+    u.onerror=()=>{};
+    synth.speak(u);synth.resume();radarSpeechPrimed=true;return true;
+  }catch(e){console.warn('SpeedGuard: no s’ha pogut preparar la veu',e);return false;}
+}
 function speakRadar(text) {
-  if(!alertSettings.voice) return false;
+  if(!alertSettings.voice || !text) return false;
   try {
     if (!('speechSynthesis' in window) || !('SpeechSynthesisUtterance' in window)) return false;
-    const synth=window.speechSynthesis;
-    // No cancel·lem missatges ja en curs a cada actualització GPS: això podia tallar la veu.
-    if(synth.speaking && synth.pending) synth.cancel();
-    const u=new SpeechSynthesisUtterance(String(text));
-    u.lang=alertLang()==='es'?'es-ES':'ca-ES'; u.rate=1.0; u.volume=1;
+    const synth=window.speechSynthesis, now=Date.now(), message=String(text).trim();
+    if(!message)return false;
+    // Evita repetir la mateixa frase massa de pressa, però no cancel·la una alerta que ja s'està reproduint.
+    if(message===radarSpeechLastText && now-radarSpeechLastAt<5000)return false;
+    if(!radarSpeechPrimed){synth.resume();}
+    const u=new SpeechSynthesisUtterance(message);
+    u.lang=alertLang()==='es'?'es-ES':'ca-ES';u.rate=1.0;u.volume=1;
     u.onerror=(e)=>console.warn('SpeedGuard: error de veu',e.error||e);
-    synth.resume(); synth.speak(u); return true;
+    u.onstart=()=>{radarSpeechPrimed=true;};
+    synth.resume();synth.speak(u);
+    radarSpeechLastText=message;radarSpeechLastAt=now;return true;
   } catch(e) { console.warn('SpeedGuard: veu no disponible',e); return false; }
 }
 function showRadarAlert(text,type='fixed'){
@@ -1694,14 +1712,44 @@ function showRadarAlert(text,type='fixed'){
 function distanceToRadar(r){return haversineKm(lastLat,lastLon,r.lat,r.lon)}
 function bearingDeg(lat1,lon1,lat2,lon2){const p1=lat1*Math.PI/180,p2=lat2*Math.PI/180,dl=(lon2-lon1)*Math.PI/180,y=Math.sin(dl)*Math.cos(p2),x=Math.cos(p1)*Math.sin(p2)-Math.sin(p1)*Math.cos(p2)*Math.cos(dl);return (Math.atan2(y,x)*180/Math.PI+360)%360}
 function angleDiff(a,b){let d=Math.abs(a-b)%360;return d>180?360-d:d}
-function radarDirectionOK(r){if(!Number.isFinite(currentHeading)||currentSpeed<15)return true;return angleDiff(currentHeading,bearingDeg(r.lat,r.lon,r.toLat,r.toLon))<=65}
+function radarDirectionOK(r){
+  const heading=getUsableHeading();
+  // Prioritat de seguretat: si no tenim un rumb fiable del vehicle, avisem.
+  if(!Number.isFinite(heading)||currentSpeed<15)return true;
+
+  // Només filtrem quan la font proporciona informació de direcció utilitzável.
+  // Radars fixos sense directionDeg (cas habitual a OSM): SEMPRE avisar,
+  // encara que la posició sembli estar darrere o a la calçada contrària.
+  if(Number.isFinite(r.directionDeg)) return angleDiff(heading,r.directionDeg)<=65;
+
+  // En radars de tram, la geometria del tram permet inferir-ne el sentit.
+  if(r.type==='average'&&Number.isFinite(r.toLat)&&Number.isFinite(r.toLon)){
+    const dStart=haversineKm(lastLat,lastLon,r.lat,r.lon);
+    const dEnd=haversineKm(lastLat,lastLon,r.toLat,r.toLon);
+    const routeBearing=dStart<=dEnd
+      ? bearingDeg(r.lat,r.lon,r.toLat,r.toLon)
+      : bearingDeg(r.toLat,r.toLon,r.lat,r.lon);
+    return angleDiff(heading,routeBearing)<=65;
+  }
+
+  // Sense dades de direcció fiables, no descartem el radar.
+  return true;
+}
+function parseRadarDirection(tags){
+  if(!tags)return null;
+  const raw=String(tags.direction||tags['camera:direction']||tags['traffic_sign:direction']||'').trim().toLowerCase();
+  if(!raw)return null;
+  if(/^\d{1,3}(?:\.\d+)?$/.test(raw)){const n=Number(raw);return n>=0&&n<360?n:null;}
+  const dirs={n:0,north:0,ne:45,northeast:45,e:90,east:90,se:135,southeast:135,s:180,south:180,sw:225,southwest:225,w:270,west:270,nw:315,northwest:315};
+  return Object.prototype.hasOwnProperty.call(dirs,raw)?dirs[raw]:null;
+}
 async function detectRadars(forceRefresh = false){
   if(lastLat===null||lastLon===null||radarQuerying)return; radarQuerying=true; lastRadarQueryAt=Date.now();
   const query=`[out:json][timeout:10];(node(around:8000,${lastLat},${lastLon})[highway=speed_camera];rel(around:8000,${lastLat},${lastLon})[type=enforcement][enforcement=average_speed];rel(around:8000,${lastLat},${lastLon})[enforcement=average_speed];);out body;>;out body;`;
   const endpoints=['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter'];
   try{
     // La mateixa cobertura de radars es reutilitza fins a 24 h mentre som a menys de 4 km del centre.
-    const radarCache=sgCacheRead('sg_radar_cache_v23');
+    const radarCache=sgCacheRead('sg_radar_cache_v24');
     if(!forceRefresh&&radarCache&&Array.isArray(radarCache.fixed)&&Array.isArray(radarCache.average)&&Date.now()-radarCache.savedAt<SG_RADAR_CACHE_TTL&&sgKmBetween(lastLat,lastLon,radarCache.lat,radarCache.lon)<4){
       radarDetection.fixed=radarCache.fixed;radarDetection.average=radarCache.average;
       checkRadarProximity();updateNearestRadarHUD();updateRadarScanHUD('● RADARS EN MEMÒRIA LOCAL');return;
@@ -1712,9 +1760,9 @@ async function detectRadars(forceRefresh = false){
       return;
     }
     const nodes=new Map(),ways=new Map(),rels=[]; for(const e of(data.elements||[])){if(e.type==='node'&&e.lat!=null)nodes.set(e.id,e);else if(e.type==='way')ways.set(e.id,e);else if(e.type==='relation')rels.push(e)}
-    radarDetection.fixed=(data.elements||[]).filter(e=>e.type==='node'&&e.tags?.highway==='speed_camera').map(e=>({id:'f'+e.id,lat:e.lat,lon:e.lon,limit:parseMaxspeed(e.tags?.maxspeed)||currentVia.limite,type:'fixed'})); radarDetection.average=[];
+    radarDetection.fixed=(data.elements||[]).filter(e=>e.type==='node'&&e.tags?.highway==='speed_camera').map(e=>({id:'f'+e.id,lat:e.lat,lon:e.lon,limit:parseMaxspeed(e.tags?.maxspeed)||currentVia.limite,type:'fixed',directionDeg:parseRadarDirection(e.tags)})); radarDetection.average=[];
     for(const rel of rels){let from=null,to=null,sectionNodes=[];for(const m of(rel.members||[])){if(m.type==='node'&&nodes.has(m.ref)){if(m.role==='from')from=nodes.get(m.ref);if(m.role==='to')to=nodes.get(m.ref)}if(m.role==='section'&&m.type==='way'&&ways.has(m.ref)){const wn=ways.get(m.ref).nodes||[];if(wn.length){const a=nodes.get(wn[0]),b=nodes.get(wn[wn.length-1]);if(a)sectionNodes.push(a);if(b)sectionNodes.push(b)}}}if(!from&&sectionNodes.length)from=sectionNodes[0];if(!to&&sectionNodes.length)to=sectionNodes[sectionNodes.length-1];if(!from||!to)continue;const limit=parseMaxspeed(rel.tags?.maxspeed||rel.tags?.['maxspeed:enforcement'])||currentVia.limite,total=haversineKm(from.lat,from.lon,to.lat,to.lon);if(total<.1)continue;radarDetection.average.push({id:'a'+rel.id,lat:from.lat,lon:from.lon,toLat:to.lat,toLon:to.lon,totalKm:total,limit,type:'average',path:sectionNodes.map(n=>({lat:n.lat,lon:n.lon}))})}
-    sgCacheWrite('sg_radar_cache_v23',{savedAt:Date.now(),lat:lastLat,lon:lastLon,fixed:radarDetection.fixed,average:radarDetection.average});
+    sgCacheWrite('sg_radar_cache_v24',{savedAt:Date.now(),lat:lastLat,lon:lastLon,fixed:radarDetection.fixed,average:radarDetection.average});
     checkRadarProximity();updateNearestRadarHUD();updateRadarScanHUD('● RADARS ACTUALITZATS');markRadarDataUpdated();
   }catch(e){updateRadarScanHUD('⚠ RADARS: dades no disponibles')}finally{radarQuerying=false}
 }
@@ -1811,7 +1859,7 @@ function checkRadarProximity(){
       speakRadar(T().avgVoice(Math.round(av.d*1000),av.limit)); updateRouteHUD(av);
     }
   }
-  const fx=alertSettings.fixed ? radarDetection.fixed.map(r=>({...r,d:distanceToRadar(r)})).filter(r=>r.d<maxD/1000).filter(r=>{if(!Number.isFinite(getUsableHeading())||currentSpeed<15)return true;const b=bearingDeg(lastLat,lastLon,r.lat,r.lon);return angleDiff(getUsableHeading(),b)<=75}).sort((a,b)=>a.d-b.d)[0] : null;
+  const fx=alertSettings.fixed ? radarDetection.fixed.map(r=>({...r,d:distanceToRadar(r),type:'fixed'})).filter(r=>r.d<maxD/1000).filter(radarDirectionOK).sort((a,b)=>a.d-b.d)[0] : null;
   if(fx){
     if(fx.d<=0.08) logRadarPass(fx,'fixed',currentSpeed);
     const key='fixed:'+fx.id;
@@ -1855,7 +1903,7 @@ async function recoverFromNavigation(){
       return;
     }
     if(status)status.textContent='Forçant una nova consulta de radars…';
-    localStorage.removeItem('sg_radar_cache_v23');
+    localStorage.removeItem('sg_radar_cache_v24');
     await detectRadars(true);
     if(lastLat!==null&&lastLon!==null){updateMobileZoneHUD();checkRadarProximity();updateNearestRadarHUD();}
     if(status)status.textContent='✓ Recuperació acabada · '+new Date().toLocaleTimeString();
