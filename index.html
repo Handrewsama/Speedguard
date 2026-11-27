@@ -679,7 +679,7 @@ body.driving-mode #drivingRadarHUD{display:block}
   <div id="titleBar">
     <div class="tb-left">
       <div class="tb-dot" id="statusDot"></div>
-      <img class="tb-logo" src="logo-mark.png" alt="" aria-hidden="true"><span class="tb-title">SPEEDGUARD <span class="app-version">V49</span></span>
+      <img class="tb-logo" src="logo-mark.png" alt="" aria-hidden="true"><span class="tb-title">SPEEDGUARD <span class="app-version">V49.1</span></span>
     </div>
     <div class="tb-actions">
       <button class="tb-btn" id="minimizeBtn" title="Minimizar">_</button>
@@ -2798,6 +2798,17 @@ async function queryOSMLimit(forceRefresh=false){
 setTimeout(()=>{try{updateMobileZoneHUD();if(radarDetection.fixed.length||radarDetection.average.length)checkRadarProximity();}catch{}},50);
 </script>
 <script>
+/* SpeedGuard V49.1 — client-side stale-cache guard */
+(function(){
+  const BUILD='49.1';
+  try {
+    const previous=localStorage.getItem('speedguard_build');
+    localStorage.setItem('speedguard_build',BUILD);
+    if(previous && previous!==BUILD && 'caches' in window){
+      caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('speedguard-') && k!=='speedguard-sw-v49.1').map(k=>caches.delete(k)))).catch(()=>{});
+    }
+  } catch(e) {}
+})();
 if ("serviceWorker" in navigator) {
   // SpeedGuard V30 — force Service Worker refresh and recover from stale caches
   if ('serviceWorker' in navigator) {
@@ -2807,9 +2818,9 @@ if ("serviceWorker" in navigator) {
       sgReloadedAfterUpdate = true;
       window.location.reload();
     });
-    navigator.serviceWorker.register('./sw.js?v=49', { updateViaCache: 'none' })
+    navigator.serviceWorker.register('./sw.js?v=49.1', { updateViaCache: 'none' })
       .then(reg => {
-        console.log('SpeedGuard SW V30 registered', reg);
+        console.log('SpeedGuard SW V49.1 registered', reg);
         reg.update().catch(() => {});
       })
       .catch(e => console.warn('SW err', e));
