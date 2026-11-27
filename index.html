@@ -652,6 +652,20 @@ body.driving-mode #drivingRadarHUD{display:block}
     .alert-simple-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}.alert-toggle{display:flex;align-items:center;gap:7px;min-height:42px;padding:7px 8px;border:1px solid #202033;border-radius:9px;background:#0b0b12;color:#eafcff;font-size:10px;font-weight:700}.alert-toggle input{width:18px;height:18px;accent-color:var(--ok)}.alert-toggle.disabled{opacity:.45}.alert-toggle small{font-size:8px;color:var(--muted)}.alert-source-note{margin-top:9px;padding:8px 9px;border-radius:9px;background:#101017;border:1px solid #262638;color:#77778d;font-size:9px;line-height:1.35}
 </style>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+<style id="speedguard-v49-patches">
+/* SpeedGuard V49 — radar/road HUD fixes */
+.route-line{height:28px;display:grid;grid-template-rows:12px 12px;row-gap:3px;position:relative;margin:0 4px}
+.route-track-row{position:relative;height:12px}
+.route-track-row .route-base,.route-track-row .route-progress{top:5px}
+.route-track-row .route-marker{top:0}
+.route-radar-row{position:relative;height:12px;display:block}
+.route-radar-row .route-radar{top:0}
+.route-zone.mobile{top:0;height:12px}
+.route-radar{z-index:4}
+.route-zone.mobile{z-index:3}
+.v49-limit-note{font-size:8px;color:#9ba7aa;letter-spacing:.4px;margin-top:3px}
+</style>
 </head>
 <body>
 <div id="edgeHalo" aria-hidden="true"></div>
@@ -665,7 +679,7 @@ body.driving-mode #drivingRadarHUD{display:block}
   <div id="titleBar">
     <div class="tb-left">
       <div class="tb-dot" id="statusDot"></div>
-      <img class="tb-logo" src="logo-mark.png" alt="" aria-hidden="true"><span class="tb-title">SPEEDGUARD <span class="app-version">V43</span></span>
+      <img class="tb-logo" src="logo-mark.png" alt="" aria-hidden="true"><span class="tb-title">SPEEDGUARD <span class="app-version">V49</span></span>
     </div>
     <div class="tb-actions">
       <button class="tb-btn" id="minimizeBtn" title="Minimizar">_</button>
@@ -696,7 +710,7 @@ body.driving-mode #drivingRadarHUD{display:block}
     <div class="drh-recovery-row"><button id="navRecoverBtn" type="button" onclick="recoverFromNavigation()">↻ RECUPERAR RADARS</button><span id="navRecoverStatus" role="status" aria-live="polite">GPS i radars en seguiment</span></div>
     <div id="drhRoute">
       <div class="route-head"><span id="drhRouteTitle">RECORRIDO DE CONTROL</span><span id="drhRouteStatus">—</span></div>
-      <div class="route-line"><div class="route-base"></div><div class="route-progress" id="drhRouteProgress"></div><div class="route-zone mobile" id="drhMobileZone"></div><div class="route-radar" id="drhRouteRadar"></div><div class="route-marker" id="drhRouteMarker"></div></div>
+      <div class="route-line"><div class="route-track-row"><div class="route-base"></div><div class="route-progress" id="drhRouteProgress"></div><div class="route-marker" id="drhRouteMarker"></div></div><div class="route-radar-row"><div class="route-zone mobile" id="drhMobileZone"></div><div class="route-radar" id="drhRouteRadar"></div></div></div>
       <div class="route-labels"><span id="drhRouteStart">INICIO</span><span id="drhRouteMiddle">CONTROL</span><span id="drhRouteEnd">FIN</span></div>
     </div>
     <div class="drh-live" id="drhLive" style="display:none">
@@ -1208,6 +1222,7 @@ function updateMobileZoneHUD(){
   return zone;
 }
 let alertSettings = (() => { try { return {...DEFAULT_ALERT_SETTINGS, ...(JSON.parse(localStorage.getItem('sg_alert_settings') || '{}'))}; } catch { return {...DEFAULT_ALERT_SETTINGS}; } })();
+alertSettings.sound = alertSettings.sound !== false;
 function saveAlertSettings(){ localStorage.setItem('sg_alert_settings', JSON.stringify(alertSettings)); }
 function alertLang(){ return alertSettings.language==='es' ? 'es' : 'ca'; }
 const ALERT_TEXT = {
@@ -2478,6 +2493,310 @@ setInterval(() => {
   if (inputMode === 'gps') update();
 }, 1000);
 </script>
+
+<script id="speedguard-v49-patch">
+/* ================================================================
+   SPEEDGUARD V49 PATCH
+   - Spain-wide announced radar feed + OSM fallback
+   - better road/speed-limit inference
+   - geometry-aware average-speed radar progress
+   - independent mobile-zone/radar visual layers
+   - one subtle fixed-radar entry chime (with hysteresis)
+   ================================================================ */
+const SG_V49_RADAR_FEED='https://geiserx.github.io/radares-anunciados-ha/feed.geojson';
+const SG_V49_RADAR_CACHE='sg_radar_cache_v49';
+const SG_V49_RADAR_TTL=6*60*60*1000;
+const SG_V49_ROAD_TTL=30*60*1000;
+const sgV49FixedZoneState=new Map();
+let sgV49RadarFeedBusy=false;
+let sgV49LastRadarFeedAt=0;
+let sgV49AudioCtx=null;
+
+function sgV49Num(v){const n=Number(v);return Number.isFinite(n)?n:null;}
+function sgV49LimitFromValue(v){
+  if(v==null)return null;
+  const s=String(v).trim().toLowerCase();
+  if(!s)return null;
+  if(/^none|unlimited|signals|walk$/i.test(s))return null;
+  const m=s.match(/(\d{2,3})(?:[.,]\d+)?/); if(m){const n=Number(m[1]);if(n>=10&&n<=160)return n;}
+  const aliases={'es:urban':50,'es:rural':90,'es:motorway':120,'es:living_street':20,'es:zone30':30,'urban':50,'rural':90};
+  return aliases[s]||null;
+}
+function parseMaxspeedV49(val){return sgV49LimitFromValue(val);}
+/* Override the legacy parser used by the rest of the app. */
+parseMaxspeed=parseMaxspeedV49;
+
+function sgV49ExplicitLimit(tags, heading, roadBearing){
+  tags=tags||{};
+  const forward=sgV49LimitFromValue(tags['maxspeed:forward']);
+  const backward=sgV49LimitFromValue(tags['maxspeed:backward']);
+  const base=sgV49LimitFromValue(tags.maxspeed);
+  if(Number.isFinite(heading)&&Number.isFinite(roadBearing)){
+    const same=angleDiff(heading,roadBearing)<=90;
+    if(same&&forward)return forward;
+    if(!same&&backward)return backward;
+  }
+  return base||forward||backward||sgV49LimitFromValue(tags['maxspeed:lanes'])||sgV49LimitFromValue(tags['maxspeed:type'])||null;
+}
+function sgV49RoadLimit(tags,heading,roadBearing){
+  tags=tags||{};
+  const explicit=sgV49ExplicitLimit(tags,heading,roadBearing); if(explicit)return {limit:explicit,confidence:'high',source:'OSM:maxspeed'};
+  const h=String(tags.highway||'').toLowerCase();
+  const lanes=Math.max(0,parseInt(tags.lanes,10)||0);
+  const urbanType=/urban/i.test(String(tags['maxspeed:type']||''))||/urban/i.test(String(tags['source:maxspeed']||''));
+  const defaults={motorway:120,motorway_link:80,trunk:90,trunk_link:80,primary:90,primary_link:80,secondary:90,secondary_link:70,tertiary:90,tertiary_link:70,living_street:20,residential:30,service:20};
+  if(h==='motorway')return {limit:120,confidence:'medium',source:'DGT:autopista/autovía'};
+  if(h==='motorway_link'||h==='trunk_link'||h==='primary_link'||h==='secondary_link'||h==='tertiary_link')return {limit:defaults[h],confidence:'low',source:'OSM:enlace'};
+  if(h==='living_street')return {limit:20,confidence:'medium',source:'DGT:vía plataforma única'};
+  if(h==='residential')return {limit:30,confidence:'medium',source:'DGT:vía urbana 1 carril'};
+  if(urbanType)return {limit:lanes>=4?50:30,confidence:'medium',source:'DGT:urbana'};
+  if(/^(trunk|primary|secondary|tertiary|unclassified)$/.test(h))return {limit:90,confidence:'low',source:'DGT:carretera convencional'};
+  return {limit:null,confidence:'none',source:'no confirmat'};
+}
+
+function sgV49PointSegment(lat,lon,a,b){
+  const lat0=lat*Math.PI/180, sx=111320*Math.cos(lat0), sy=110540;
+  const x=(lon-a.lon)*sx, y=(lat-a.lat)*sy, x2=(b.lon-a.lon)*sx, y2=(b.lat-a.lat)*sy;
+  const den=x2*x2+y2*y2||1, t=Math.max(0,Math.min(1,(x*x2+y*y2)/den));
+  const px=a.lon+t*(b.lon-a.lon), py=a.lat+t*(b.lat-a.lat);
+  return {t,d:haversineKm(lat,lon,py,px),lat:py,lon:px};
+}
+function sgV49PathMetrics(path,lat=lastLat,lon=lastLon){
+  if(!Array.isArray(path)||path.length<2||lat==null||lon==null)return null;
+  let cum=0,best=null;
+  for(let i=0;i<path.length-1;i++){
+    const a=path[i],b=path[i+1];
+    if(!a||!b)continue;
+    const seg=sgV49PointSegment(lat,lon,a,b);
+    const segLen=haversineKm(a.lat,a.lon,b.lat,b.lon);
+    const progressKm=cum+segLen*seg.t;
+    if(!best||seg.d<best.d)best={d:seg.d,progressKm,segment:i,bearing:bearingDeg(a.lat,a.lon,b.lat,b.lon)};
+    cum+=segLen;
+  }
+  return best?{...best,totalKm:cum,progress:Math.max(0,Math.min(1,best.progressKm/Math.max(.001,cum)))}:null;
+}
+function sgV49NormalizeCoords(coords){
+  return (coords||[]).map(c=>Array.isArray(c)&&c.length>=2?{lon:Number(c[0]),lat:Number(c[1])}:null).filter(p=>p&&Number.isFinite(p.lat)&&Number.isFinite(p.lon));
+}
+function sgV49FeatureLimit(props){
+  props=props||{};
+  return sgV49LimitFromValue(props.limit??props.maxspeed??props.speed_limit??props['maxspeed']??props['speedLimit']);
+}
+function sgV49FeatureKind(props,geometry){
+  const raw=String(props?.kind??props?.type??props?.category??props?.radar_type??props?.radarType??props?.name??'').toLowerCase();
+  if(geometry?.type==='LineString'||/section|tramo|average|control.*section|stretch|vigilad/.test(raw))return 'average';
+  if(/mobile|m[oó]vil/.test(raw))return 'mobile';
+  return 'fixed';
+}
+function sgV49FeatureDirection(props){
+  for(const k of ['directionDeg','direction','bearing','heading','course','azimuth']){
+    const n=parseRadarDirection({tags:{[k]:props?.[k]}}); if(Number.isFinite(n))return n;
+  }
+  return null;
+}
+function sgV49FeedToRadars(json){
+  const fixed=[],average=[];
+  for(const f of (json?.features||[])){
+    const g=f.geometry,p=f.properties||{},kind=sgV49FeatureKind(p,g),limit=sgV49FeatureLimit(p);
+    if(g?.type==='Point'){
+      const lon=Number(g.coordinates?.[0]),lat=Number(g.coordinates?.[1]); if(!Number.isFinite(lat)||!Number.isFinite(lon))continue;
+      if(kind==='mobile')continue;
+      if(kind==='average'){
+        average.push({id:'feed-a-'+(f.id||fixed.length),lat,lon,toLat:lat,toLon:lon,totalKm:0,limit:limit||null,type:'average',path:[{lat,lon}],source:p.source||'feed',name:p.name||''});
+      }else fixed.push({id:'feed-f-'+(f.id||fixed.length),lat,lon,limit:limit||null,type:'fixed',directionDeg:sgV49FeatureDirection(p),source:p.source||'feed',name:p.name||''});
+    }else if(g?.type==='LineString'){
+      const path=sgV49NormalizeCoords(g.coordinates); if(path.length<2)continue;
+      const total=path.slice(1).reduce((s,pt,i)=>s+haversineKm(path[i].lat,path[i].lon,pt.lat,pt.lon),0);
+      if(total<.1)continue;
+      average.push({id:'feed-a-'+(f.id||average.length),lat:path[0].lat,lon:path[0].lon,toLat:path[path.length-1].lat,toLon:path[path.length-1].lon,totalKm:total,limit:limit||null,type:'average',path,source:p.source||'feed',name:p.name||'',directionDeg:sgV49FeatureDirection(p)});
+    }
+  }
+  return {fixed,average};
+}
+async function sgV49FetchFeed(){
+  if(sgV49RadarFeedBusy)return null;
+  sgV49RadarFeedBusy=true;
+  try{
+    const res=await fetch(SG_V49_RADAR_FEED+'?t='+Math.floor(Date.now()/600000),{cache:'no-store',signal:AbortSignal.timeout(10000)});
+    if(!res.ok)throw new Error('feed '+res.status);
+    const json=await res.json(); const parsed=sgV49FeedToRadars(json);
+    if(parsed.fixed.length||parsed.average.length){sgV49LastRadarFeedAt=Date.now();return parsed;}
+  }catch(e){logTripDiagnostic('radar-feed','Feed de radars V49 no disponible',{error:String(e?.message||e)});}
+  finally{sgV49RadarFeedBusy=false;}
+  return null;
+}
+
+async function detectRadars(forceRefresh=false){
+  if(lastLat===null||lastLon===null||radarQuerying)return;
+  radarQuerying=true; lastRadarQueryAt=Date.now();
+  try{
+    let data=null;
+    const cached=sgCacheRead(SG_V49_RADAR_CACHE);
+    if(!forceRefresh&&cached&&Date.now()-cached.savedAt<SG_V49_RADAR_TTL&&sgKmBetween(lastLat,lastLon,cached.lat,cached.lon)<30){data={fixed:cached.fixed||[],average:cached.average||[]};}
+    if(!data)data=await sgV49FetchFeed();
+    if(data){
+      /* Complete the feed with local OSM enforcement data so newly mapped radars are not lost. */
+      const osm=await sgV49FetchOsmRadars();
+      data.fixed=sgV49MergeRadars(data.fixed,osm.fixed,'fixed');
+      data.average=sgV49MergeRadars(data.average,osm.average,'average');
+      const lat=lastLat,lon=lastLon;
+      sgCacheWrite(SG_V49_RADAR_CACHE,{savedAt:Date.now(),lat,lon,fixed:data.fixed,average:data.average});
+      radarDetection.fixed=data.fixed;radarDetection.average=data.average;
+      checkRadarProximity();updateNearestRadarHUD();updateRadarScanHUD('● RADARS V49 ACTUALITZATS');markRadarDataUpdated();return;
+    }
+    const osm=await sgV49FetchOsmRadars();
+    if(osm.fixed.length||osm.average.length){radarDetection.fixed=osm.fixed;radarDetection.average=osm.average;checkRadarProximity();updateNearestRadarHUD();updateRadarScanHUD('● RADARS OSM');markRadarDataUpdated();}
+  }catch(e){console.warn('V49 radar detection',e);updateRadarScanHUD('⚠ RADARS: dades no disponibles');logTripDiagnostic('radar-feed-error','Error carregant radars V49',{error:String(e?.message||e)});}
+  finally{radarQuerying=false;}
+}
+function sgV49MergeRadars(a,b,type){
+  const out=[...(a||[])];
+  for(const r of (b||[])){
+    const dup=out.some(x=>haversineKm(x.lat,x.lon,r.lat,r.lon)<.08 && x.type===type);
+    if(!dup)out.push(r);
+  }
+  return out;
+}
+async function sgV49FetchOsmRadars(){
+  const q=`[out:json][timeout:10];(node(around:10000,${lastLat},${lastLon})[highway=speed_camera];rel(around:10000,${lastLat},${lastLon})[type=enforcement][enforcement=average_speed];rel(around:10000,${lastLat},${lastLon})[enforcement=average_speed];);out body geom;`;
+  const eps=['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter'];
+  let data=null;for(const ep of eps){try{const res=await fetch(ep+'?data='+encodeURIComponent(q),{signal:AbortSignal.timeout(10000)});if(!res.ok)continue;const d=await res.json();if(Array.isArray(d.elements)){data=d;break}}catch{}}
+  if(!data)return {fixed:[],average:[]};
+  const fixed=[],average=[];
+  const ways=new Map(),nodes=new Map(),rels=[];
+  for(const e of data.elements){if(e.type==='node'&&e.lat!=null)nodes.set(e.id,e);else if(e.type==='way')ways.set(e.id,e);else if(e.type==='relation')rels.push(e);}
+  for(const e of data.elements){if(e.type==='node'&&e.tags?.highway==='speed_camera')fixed.push({id:'osm-f'+e.id,lat:e.lat,lon:e.lon,limit:sgV49LimitFromValue(e.tags?.maxspeed)||null,type:'fixed',directionDeg:parseRadarDirection(e.tags||{}),source:'OSM'});}
+  for(const rel of rels){
+    let path=[];
+    for(const m of rel.members||[]){
+      if(m.type!=='way'||!ways.has(m.ref))continue;
+      const w=ways.get(m.ref),g=(w.geometry||[]).map(n=>({lat:n.lat,lon:n.lon})); if(g.length<2)continue;
+      if(!path.length)path=g.slice();
+      else{
+        const a=path[path.length-1],b=g[0];
+        if(haversineKm(a.lat,a.lon,b.lat,b.lon)<.03)path.push(...g.slice(1)); else path.push(...g);
+      }
+    }
+    if(path.length<2)continue;
+    const total=path.slice(1).reduce((s,p,i)=>s+haversineKm(path[i].lat,path[i].lon,p.lat,p.lon),0);if(total<.1)continue;
+    const limit=sgV49LimitFromValue(rel.tags?.maxspeed||rel.tags?.['maxspeed:enforcement'])||null;
+    average.push({id:'osm-a'+rel.id,lat:path[0].lat,lon:path[0].lon,toLat:path[path.length-1].lat,toLon:path[path.length-1].lon,totalKm:total,limit,type:'average',path,source:'OSM',directionDeg:parseRadarDirection(rel.tags||{})});
+  }
+  return {fixed,average};
+}
+function radarDirectionOK(r){
+  const heading=getUsableHeading(); if(!Number.isFinite(heading)||currentSpeed<12)return true;
+  if(Number.isFinite(r.directionDeg))return angleDiff(heading,r.directionDeg)<=70;
+  if(r.type==='average'&&Array.isArray(r.path)&&r.path.length>1){
+    const m=sgV49PathMetrics(r.path,lastLat,lastLon); if(m&&Number.isFinite(m.bearing))return angleDiff(heading,m.bearing)<=75;
+  }
+  if(r.type==='fixed')return true;
+  return true;
+}
+function routeProgressForRadar(r){
+  if(!r||lastLat===null||lastLon===null)return null;
+  if(r.type==='average'&&Array.isArray(r.path)&&r.path.length>1){
+    const m=sgV49PathMetrics(r.path,lastLat,lastLon);return m?m.progress:null;
+  }
+  return null;
+}
+function sgV49RadarOnRoad(r){
+  if(r.type!=='average'||!Array.isArray(r.path)||r.path.length<2)return true;
+  const m=sgV49PathMetrics(r.path,lastLat,lastLon); return !!m && m.d<=.25;
+}
+function autoStartAverageRadar(av){
+  const blockedUntil=completedAverageRadars.get(av.id)||0;if(blockedUntil>Date.now())return;
+  const m=sgV49PathMetrics(av.path,lastLat,lastLon);if(!m||m.d>.18)return;
+  const initialDone=Math.max(0,Math.min(av.totalKm*.98,m.progressKm));
+  segmentRadar={active:true,auto:true,id:av.id,totalKm:av.totalKm,limitKmh:av.limit||roadDetection.limit||currentVia.limite,distanceKm:initialDone,startTime:performance.now(),lastLat,lastLon,completed:false,entrySpeed:currentSpeed,path:av.path};
+  if(!loggedRadarIds.has(av.id))logRadarPass(av,'average',currentSpeed,'entrada al tram');
+  document.getElementById('segmentCard')?.classList.add('auto-hidden');document.getElementById('segmentState').textContent='EN CURS · AUTO';document.getElementById('segmentLive').classList.add('active');
+  const hud=document.getElementById('drivingRadarHUD'),live=document.getElementById('drhLive');if(hud)hud.classList.add('visible');if(live)live.style.display='block';
+  showRadarAlert(T().start(segmentRadar.limitKmh,av.totalKm.toFixed(1).replace('.',',')),'average');speakRadar(T().startVoice(segmentRadar.limitKmh));updateRouteHUD(av);updateSegmentRadarUI();
+}
+function sgV49SubtleFixedChime(){
+  if(!alertSettings.sound)return;
+  try{
+    const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+    sgV49AudioCtx ||= new AC();const ctx=sgV49AudioCtx;if(ctx.state==='suspended')ctx.resume();
+    const o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.setValueAtTime(740,ctx.currentTime);o.frequency.exponentialRampToValueAtTime(620,ctx.currentTime+.16);g.gain.setValueAtTime(.0001,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.055,ctx.currentTime+.018);g.gain.exponentialRampToValueAtTime(.0001,ctx.currentTime+.19);o.connect(g);g.connect(ctx.destination);o.start();o.stop(ctx.currentTime+.2);
+  }catch(e){}
+}
+function updateRouteHUD(r){
+  const box=document.getElementById('drhRoute'),prog=document.getElementById('drhRouteProgress'),marker=document.getElementById('drhRouteMarker'),radar=document.getElementById('drhRouteRadar'),zone=document.getElementById('drhMobileZone');
+  if(!box||!prog||!marker||!radar)return;
+  box.classList.add('visible');
+  if(r&&r.type==='average'){
+    const p=routeProgressForRadar(r)||0;prog.style.width=(p*100)+'%';marker.style.left=(p*100)+'%';radar.style.display='block';radar.className='route-radar average';radar.style.left='100%';
+    document.getElementById('drhRouteTitle').textContent=alertLang()==='es'?'RECORRIDO RADAR DE TRAMO':'RECORREGUT RADAR DE TRAM';
+    document.getElementById('drhRouteStatus').textContent=(Math.max(0,r.totalKm-(r.totalKm*p))).toFixed(1).replace('.',',')+' km';
+    document.getElementById('drhRouteStart').textContent=alertLang()==='es'?'INICIO':'INICI';document.getElementById('drhRouteMiddle').textContent='CONTROL';document.getElementById('drhRouteEnd').textContent=alertLang()==='es'?'FIN':'FI';
+  }else if(r){
+    const d=Number.isFinite(r.d)?r.d:distanceToRadar(r),span=Math.max(.3,Math.min(2,Number(alertSettings.distanceM||1000)/1000)),p=Math.max(0,Math.min(1,1-(d/span)));prog.style.width=(p*100)+'%';marker.style.left=(p*100)+'%';radar.style.display='block';radar.className='route-radar fixed';radar.style.left='100%';
+    document.getElementById('drhRouteTitle').textContent=alertLang()==='es'?'RADAR FIJO · APROXIMACIÓN':'RADAR FIX · APROXIMACIÓ';document.getElementById('drhRouteStatus').textContent=Math.round(d*1000)+' m';document.getElementById('drhRouteStart').textContent='0 m';document.getElementById('drhRouteMiddle').textContent='RADAR';document.getElementById('drhRouteEnd').textContent='RADAR';
+  }else{radar.style.display='none';}
+  const z=getSctMobileZone(); if(alertSettings.mobileZones&&z){zone.style.display='block';zone.style.left='0';zone.style.width='100%';}else zone.style.display='none';
+}
+function updateMobileZoneHUD(){
+  const zone=getSctMobileZone(),el=document.getElementById('drhMobileZone');if(!el)return zone;
+  const key=zone?normRef(zone.ref):null;
+  if(!alertSettings.mobileZones||!zone){activeMobileZoneKey=null;el.style.display='none';return null;}
+  activeMobileZoneKey=key;el.style.display='block';el.style.left='0';el.style.width='100%';
+  const route=document.getElementById('drhRoute');if(route)route.classList.add('visible');
+  const title=document.getElementById('drhRouteTitle');if(title&&!segmentRadar.active)title.textContent=alertLang()==='es'?'ZONA DE POSIBLE RADAR MÓVIL':'ZONA DE POSSIBLE RADAR MÒBIL';
+  const start=document.getElementById('drhRouteStart');if(start&&!segmentRadar.active)start.textContent='SCT';const mid=document.getElementById('drhRouteMiddle');if(mid&&!segmentRadar.active)mid.textContent=zone.ref;const end=document.getElementById('drhRouteEnd');if(end&&!segmentRadar.active)end.textContent='SCT';
+  const status=document.getElementById('drhRouteStatus');if(status&&!segmentRadar.active)status.textContent=alertLang()==='es'?'VIGILANCIA SCT':'VIGILÀNCIA SCT';
+  return zone;
+}
+function checkRadarProximity(){
+  lastRadarProximityCheckAt=Date.now();if(lastLat===null||lastLon===null)return;
+  const now=Date.now(),maxD=Math.max(100,Number(alertSettings.distanceM)||1000)/1000;
+  let mobileZone=null,zoneKey=null;
+  try{mobileZone=updateMobileZoneHUD();zoneKey=mobileZone?normRef(mobileZone.ref):null;if(zoneKey&&zoneKey!==lastMobileZoneKey){lastMobileZoneKey=zoneKey;logTripDiagnostic('mobile-zone','Entrada a zona de possible vigilància mòbil',{road:zoneKey});if(alertSettings.mobileZones&&alertSettings.visual)showRadarAlert(T().mobile(),'danger');if(alertSettings.mobileZones&&alertSettings.voice&&now-lastMobileAlertAt>8000){lastMobileAlertAt=now;speakRadar(mobileZoneVoice());}}else if(!zoneKey){lastMobileZoneKey=null;}}catch(e){logTripDiagnostic('mobile-zone-error','Error processant zona mòbil',{error:String(e?.message||e)});}
+  const av=alertSettings.average?radarDetection.average.map(r=>({...r,d:distanceToRadar(r)})).filter(r=>r.d<Math.max(1.5,maxD/1000)&&radarDirectionOK(r)&&sgV49RadarOnRoad(r)).sort((a,b)=>a.d-b.d)[0]:null;
+  radarDetection.activeAverageId=av?av.id:null;
+  if(av){
+    const m=Array.isArray(av.path)?sgV49PathMetrics(av.path,lastLat,lastLon):null;
+    if(!segmentRadar.active&&m&&m.d<.18&&!completedAverageRadars.has(av.id))autoStartAverageRadar(av);
+    const key='average:'+av.id;
+    if(!segmentRadar.active&&av.d<maxD/1000&&now-(radarDetection.lastAlertByKey[key]||0)>45000){radarDetection.lastAlertByKey[key]=now;showRadarAlert(T().avg(Math.round(av.d*1000),av.limit||roadDetection.limit||currentVia.limite),'average');speakRadar(T().avgVoice(Math.round(av.d*1000),av.limit||roadDetection.limit||currentVia.limite));}
+    updateRouteHUD(av);
+  }
+  const fx=alertSettings.fixed?radarDetection.fixed.map(r=>({...r,d:distanceToRadar(r),type:'fixed'})).filter(r=>r.d<maxD/1000).filter(radarDirectionOK).sort((a,b)=>a.d-b.d)[0]:null;
+  if(fx){
+    const id=fx.id,wasInside=!!sgV49FixedZoneState.get(id),radius=maxD/1000;
+    if(!wasInside){sgV49FixedZoneState.set(id,now);if(alertSettings.visual)showRadarAlert(T().fixed(Math.round(fx.d*1000),fx.limit||roadDetection.limit||currentVia.limite),'fixed');sgV49SubtleFixedChime();updateRouteHUD(fx);}
+    if(fx.d<=.08)logRadarPass(fx,'fixed',currentSpeed);
+  }
+  /* Hysteresis: a radar is re-armed only after leaving its warning radius by 20%. */
+  for(const [id,enteredAt] of sgV49FixedZoneState){const r=radarDetection.fixed.find(x=>x.id===id);if(!r||distanceToRadar(r)>maxD/1000*1.2)sgV49FixedZoneState.delete(id);}
+  if(!av&&!fx){updateRouteHUD(null);if(!getSctMobileZone()){document.getElementById('drhRoute')?.classList.remove('visible');}}
+}
+
+/* V49 road detection: short-lived, position-aware cache and better limit inference. */
+async function queryOSMLimit(forceRefresh=false){
+  if(lastLat===null||lastLon===null||osmQuerying)return;
+  if(lastGpsAccuracy>65){const status=document.getElementById('osmStatus');if(status)status.textContent='GPS IMPRECÍS — esperant millor senyal';return;}
+  osmQuerying=true;lastRoadQueryAt=Date.now();const queryLat=lastLat,queryLon=lastLon,status=document.getElementById('osmStatus');if(status)status.textContent='⟳ VIA V49…';
+  const key=sgRoadCacheKey(queryLat,queryLon),cached=forceRefresh?null:sgCacheRead(key),q=`[out:json][timeout:7];way(around:180,${queryLat},${queryLon})[highway][highway!~"^(footway|path|cycleway|steps|pedestrian)$"];out tags geom;`,eps=['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter'];
+  try{
+    let data=null;if(cached&&Array.isArray(cached.elements)&&Date.now()-cached.savedAt<SG_V49_ROAD_TTL){data={elements:cached.elements};if(status)status.textContent='● VIA LOCAL RECENT';}
+    if(!data){for(const ep of eps){try{const res=await fetch(ep+'?data='+encodeURIComponent(q),{signal:AbortSignal.timeout(8000)});if(!res.ok)continue;const d=await res.json();if(Array.isArray(d.elements)){data=d;break}}catch{}}if(data)sgCacheWrite(key,{savedAt:Date.now(),lat:queryLat,lon:queryLon,elements:data.elements});}
+    if(!data)throw new Error('sense dades OSM');if(haversineKm(queryLat,queryLon,lastLat,lastLon)>.15)return;
+    const candidates=[];
+    for(const e of data.elements||[]){if(e.type!=='way'||!e.geometry?.length)continue;let best={d:Infinity,bearing:null};for(let i=0;i<e.geometry.length-1;i++){const a=e.geometry[i],b=e.geometry[i+1],m=sgV49PointSegment(queryLat,queryLon,a,b);if(m.d<best.d)best={d:m.d,bearing:bearingDeg(a.lat,a.lon,b.lat,b.lon)};}const t=e.tags||{},roadBearing=best.bearing,diff=Number.isFinite(currentHeading)&&Number.isFinite(roadBearing)?angleDiff(currentHeading,roadBearing):90,lim=sgV49RoadLimit(t,currentHeading,roadBearing),named=t.ref||t.name,dirPenalty=t.oneway==='yes'&&diff>100?25:0,score=best.d*1000+Math.min(diff,180-diff)*.45-dirPenalty-(lim.confidence==='high'?18:lim.confidence==='medium'?8:0)-(named?4:0);candidates.push({e,d:best.d,bearing:roadBearing,diff,lim,score});}
+    candidates.sort((a,b)=>a.score-b.score);const c=candidates[0];if(!c||c.d>.09){roadDetection={...roadDetection,confidence:'bad',updatedAt:Date.now(),distanceM:c?c.d*1000:null};updateRoadDiagnostic();if(status)status.textContent='– VIA NO SEGURA';return;}
+    const t=c.e.tags||{},confidence=c.lim.limit?(c.lim.confidence==='high'?'ok':c.lim.confidence==='medium'?'warn':'warn'):'bad',ref=t.ref||'',name=t.name||'';
+    roadDetection={ref,name,limit:c.lim.limit,highway:t.highway||'',distanceM:c.d*1000,bearing:c.bearing,headingDiff:c.diff,source:c.lim.source||'OSM',updatedAt:Date.now(),confidence};currentRoadRef=ref;currentRoadName=name;lastConfirmedRoadAt=Date.now();lastConfirmedRoadLat=queryLat;lastConfirmedRoadLon=queryLon;
+    updateRoadDiagnostic();updateMobileZoneHUD();markMapDataUpdated();
+    if(c.lim.limit){currentVia={...(TIPOS_VIA.find(v=>v.id==='autovia'&&c.e.tags?.highway==='motorway')||TIPOS_VIA[2]),limite:c.lim.limit};renderViaGrid();update();}
+  }catch(e){roadDetection={...roadDetection,confidence:'bad',updatedAt:Date.now()};updateRoadDiagnostic();if(status)status.textContent='✗ VIA OSM V49';}
+  finally{osmQuerying=false;}
+}
+
+/* Keep both visual layers alive when a segment radar and a mobile zone overlap. */
+setTimeout(()=>{try{updateMobileZoneHUD();if(radarDetection.fixed.length||radarDetection.average.length)checkRadarProximity();}catch{}},50);
+</script>
 <script>
 if ("serviceWorker" in navigator) {
   // SpeedGuard V30 — force Service Worker refresh and recover from stale caches
@@ -2488,7 +2807,7 @@ if ("serviceWorker" in navigator) {
       sgReloadedAfterUpdate = true;
       window.location.reload();
     });
-    navigator.serviceWorker.register('./sw.js?v=40', { updateViaCache: 'none' })
+    navigator.serviceWorker.register('./sw.js?v=49', { updateViaCache: 'none' })
       .then(reg => {
         console.log('SpeedGuard SW V30 registered', reg);
         reg.update().catch(() => {});
